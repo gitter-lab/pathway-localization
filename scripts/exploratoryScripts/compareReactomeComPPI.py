@@ -9,6 +9,7 @@ def main():
     comPPIF = argv[2]
     idMapFile = argv[3]
     locNameMap = argv[4]
+    reactomeNameMap = argv[5]
 
     #Returns a dict of gene name to uniprot
     nameDict = loadIDMap(idMapFile)
@@ -17,72 +18,105 @@ def main():
     #pF = open("tmpReact.pkl","wb")
     #pkl.dump(allPaths,pF)
     #pF.close()
-    pF = open("tmpReactComPPI.pkl","rb")
-    allPaths = pkl.load(pF)
-    pF.close()
     #Load comPPI data
     #comPPIDict = loadComPPI(comPPIF)
     #for path in allPaths.values():
     #    getComPPILabels(path, comPPIDict, nameDict)
     #Look at Reactome distribution
+    #compareComPPIReactome(allPaths, locNameMap)
     #pF = open("tmpReactComPPI.pkl","wb")
     #pkl.dump(allPaths,pF)
     #pF.close()
-    analyzeReactomeData(allPaths, locNameMap)
+    #pF = open("tmpReactComPPI.pkl","rb")
+    #allPaths = pkl.load(pF)
+    #pF.close()
+    #goNameMap = dict()
+    #for line in open(reactomeNameMap):
+    #    if "GO_TERM" in line:
+    #        continue
+    #    lineList = line.strip().split("\t")
+    #    goNameMap[lineList[0]] = lineList[1]
+
+    #for path in allPaths:
+    #    namedCol = []
+    #    for index, row in allPaths[path].iterrows():
+    #        goNums = row["LocationGO"].split(",")
+    #        namedLs = []
+    #        for l in goNums:
+    #            n = goNameMap[l]
+    #            namedLs.append(n)
+    #        namedCol.append(",".join(namedLs))
+    #    allPaths[path]["LocationName"] = namedCol
+    #pF = open("tmpReactComPPI.pkl","wb")
+    #pkl.dump(allPaths,pF)
+    #pF.close()
+    pF = open("tmpReactComPPI.pkl","rb")
+    allPaths = pkl.load(pF)
+    pF.close()
+
+    analyzeReactomeData(allPaths)
     return
 
-def analyzeReactomeData(allPaths, locNameMapF):
+def compareComPPIReactome(allPaths, locNameMapF):
     locNameMap = dict()
     for line in open(locNameMapF):
         lineList = line.strip().split()
         locNameMap[lineList[1].strip()] = lineList[0].strip()
+    #Compare comPPI and reactome Data
+    for path in allPaths:
+        corrCol = []
+        for index, row in allPaths[path].iterrows():
+            rLoc = row["LocationGO"].split(",")
+            cLoc = row["ComPPI_Labels"]
+            if cLoc == "Miss":
+                corrCol.append("ComPPI miss")
+                continue
+            if cLoc == "None":
+                corrCol.append("No ComPPI locs in common")
+                continue
+            gotMap = False
+            gotMatch = False
+            for l in rLoc:
+                if l in locNameMap:
+                    gotMap = True
+                    if locNameMap[l] == cLoc:
+                        gotMatch = True
+                        break
+            if not gotMap:
+                corrCol.append("Haven't mapped GO term")
+            elif not gotMatch:
+                corrCol.append("Incorrect")
+            else:
+                corrCol.append("Correct")
+        allPaths[path]["Reactome ComPPI Comparison"] = corrCol
+
+def analyzeReactomeData(allPaths):
     allEdges = pd.concat(allPaths.values())
 
     #Look at reactome data alone
-    #print("Mean: ",allEdges["LocationCount"].mean())
+    #print("Mean Location Counts: ",allEdges["LocationCount"].mean())
     #print(allEdges["Edge Type"].value_counts())
     #print(allEdges["Edge Type"].value_counts(normalize=True))
+    print("Number of Locations by Edge Counts:")
+    print(allEdges["LocationCount"].value_counts(normalize=True))
 
-    #print(allEdges["LocationCount"].value_counts())
+    print("\n10 Most Common Locations:")
+    print(allEdges["LocationName"].value_counts(normalize=True).nlargest(10))
+    print("\nEdge Types")
+    print(allEdges["Edge Type"].value_counts(normalize=True))
+    print("\nLocation Counts by Edge Type")
+    print(allEdges.groupby(["Edge Type","LocationCount"]).size().reset_index(name="Count").sort_values(by="Count",ascending=False))
+    #sns.heatmap(pd.crosstab(allEdges["Edge Type"], allEdges["LocationName"]))
+    #plt.show()
     #print(allEdges["LocationGO"].value_counts())
     #print(allEdges["LocationGO"].value_counts(normalize=True).to_string())
     #print((allEdges["Edge Type"][allEdges["LocationCount"]==1]).value_counts(normalize=True))
     #print((allEdges["Edge Type"][allEdges["LocationCount"]==1]).value_counts(normalize=False))
 
-    #Compare comPPI and reactome Data
-    numCorrect = 0
-    numWrong = 0
-    numMissMap = 0
-    numMissComPPI = 0
-    numNoneComPPI = 0
-    for index, row in allEdges.iterrows():
-        rLoc = row["LocationGO"].split(",")
-        cLoc = row["ComPPI_Labels"]
-        if cLoc == "Miss":
-            numMissComPPI += 1
-            continue
-        if cLoc == "None":
-            numNoneComPPI += 1
-            continue
-        gotMap = False
-        gotMatch = False
-        for l in rLoc:
-            if l in locNameMap:
-                gotMap = True
-                if locNameMap[l] == cLoc:
-                    gotMatch = True
-                    break
-        if not gotMap:
-            numMissMap += 1
-        elif not gotMatch:
-            numWrong += 1
-        else:
-            numCorrect += 1
-    print("# Correct: ",numCorrect)
-    print("# Wrong: ",numWrong)
-    print("# No ComPPI Shared Locs: ",numNoneComPPI)
-    print("# No ComPPI Prot: ",numMissComPPI)
-    print("# No GO Map: ",numMissMap)
+    print(allEdges["Reactome ComPPI Comparison"].value_counts(normalize=True))
+    cross = pd.crosstab(allEdges["Edge Type"], allEdges["Reactome ComPPI Comparison"],normalize="index")
+    sns.heatmap(cross)
+    plt.show()
     return
 
 def loadNetworksAsTables(reactomeF):

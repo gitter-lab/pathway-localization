@@ -1,0 +1,85 @@
+Number of Locations by Edge Counts:
+1    0.957637
+2    0.039634
+3    0.002559
+4    0.000092
+9    0.000069
+0    0.000005
+5    0.000004
+Name: LocationCount, dtype: float64
+
+10 Most Common Locations:
+cytosol                                                       0.379314
+nucleoplasm                                                   0.318610
+plasma membrane                                               0.121445
+extracellular region                                          0.035323
+mitochondrial inner membrane                                  0.026436
+nuclear envelope                                              0.021287
+endoplasmic reticulum membrane                                0.008554
+clathrin-coated endocytic vesicle membrane,plasma membrane    0.007667
+cytosol,chromosome, centromeric region                        0.007456
+Golgi membrane                                                0.007311
+Name: LocationName, dtype: float64
+
+Edge Types
+in-complex-with                   0.765435
+controls-state-change-of          0.157163
+controls-production-of            0.012389
+consumption-controlled-by         0.011679
+controls-transport-of             0.011233
+catalysis-precedes                0.009436
+controls-expression-of            0.007750
+used-to-produce                   0.007380
+controls-phosphorylation-of       0.007369
+chemical-affects                  0.004528
+controls-transport-of-chemical    0.004352
+reacts-with                       0.001285
+Name: Edge Type, dtype: float64
+
+Location Counts by Edge Type
+                         Edge Type  LocationCount   Count
+25                 in-complex-with              1  413833
+15        controls-state-change-of              1   85668
+26                 in-complex-with              2   17252
+12          controls-production-of              1    6926
+5        consumption-controlled-by              1    6533
+18           controls-transport-of              1    6282
+9           controls-expression-of              1    4376
+10     controls-phosphorylation-of              1    4137
+34                 used-to-produce              1    3759
+0               catalysis-precedes              1    3708
+16        controls-state-change-of              2    2881
+3                 chemical-affects              1    2537
+21  controls-transport-of-chemical              1    2387
+1               catalysis-precedes              2    1549
+27                 in-complex-with              3    1118
+31                     reacts-with              1     694
+35                 used-to-produce              2     368
+17        controls-state-change-of              3     211
+2               catalysis-precedes              3      72
+13          controls-production-of              2      69
+22  controls-transport-of-chemical              2      65
+19           controls-transport-of              2      62
+6        consumption-controlled-by              2      62
+28                 in-complex-with              4      47
+30                 in-complex-with              9      39
+36                 used-to-produce              3      35
+32                     reacts-with              2      31
+11     controls-phosphorylation-of              2      25
+4                 chemical-affects              2      20
+37                 used-to-produce              4       5
+23  controls-transport-of-chemical              3       5
+14          controls-production-of              3       2
+33                     reacts-with              3       1
+20  controls-transport-of-chemical              0       1
+7        consumption-controlled-by              3       1
+29                 in-complex-with              5       1
+8           controls-expression-of              0       1
+24                 in-complex-with              0       1
+38                 used-to-produce              5       1
+Correct                     0.451868
+Incorrect                   0.203440
+ComPPI miss                 0.176527
+No ComPPI locs in common    0.137949
+Haven't mapped GO term      0.030216
+Name: Reactome ComPPI Comparison, dtype: float64
