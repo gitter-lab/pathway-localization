@@ -6,6 +6,8 @@ import pickle as pkl
 import numpy as np
 import yaml
 from sklearn.metrics import balanced_accuracy_score,matthews_corrcoef
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score
 
 #sns.set(rc={'axes.facecolor':'#282828', 'figure.facecolor':'#282828'})
 #sns.set_theme()
@@ -18,6 +20,7 @@ def main():
     reactomeNameMap = argv[5]  # GO terms to names map tsv file
     if len(argv) > 6:
         gBasicModelRes = argv[6]  # File with basic graphical model results
+        modelsFile = argv[7] # File with other model results
 
     #Loads GO COMPPI name mapping
     goComNameMap = loadComPPIGOMap(locNameMap)
@@ -30,7 +33,8 @@ def main():
 
     #Load comPPI data
     comPPIDict = loadComPPI(comPPIF)
-    #saveComPPIProtTable(comPPIDict, nameDict)
+    comPPITable = saveComPPIProtTable(comPPIDict, nameDict)
+
     missList = []
     sizeList = []
     delList = []
@@ -68,61 +72,30 @@ def main():
 
     mapReactomeNames(allPaths, goComNameMap)
     resCols = []
+    resCols.append(addResult(allPaths, "trainedModelNoComplex53.txt","Trained No Complexes"))
+    for line in open(modelsFile):
+        resCols.append(addResult(allPaths, line.strip(), line.strip().split(".")[0]))
 
-    ##Load basic graphical model results
-    #gResDict = loadGModelLabels(gBasicModelRes)
-    #for path in allPaths:
-    #   pathGResDict = gResDict[path]
-    #   getGModelLabels("Basic Model Loc",allPaths[path],pathGResDict)
-    #compareGModelReactome(allPaths, "Basic Model Loc", "Basic Model Results")
+    #resCols.append(addResult(allPaths, gBasicModelRes,"Basic Model"))
+    #resCols.append(addResult(allPaths, "basicModelDumb10000.txt","Basic Fill Model"))
+    #resCols.append(addResult(allPaths, "trainedModel10000.txt","Trained No Groups"))
+    #resCols.append(addResult(allPaths, "trainedModelSepInter10000.txt","Trained GMM PottsCS"))
+    #resCols.append(addResult(allPaths, "trainedModel53.txt","Trained RF Concat"))
+    #resCols.append(addResult(allPaths, "trainedModelNoComplex53.txt","Trained No Complexes"))
+    #resCols.append(addResult(allPaths, "kmeans3.txt","H Model 3 Clusters"))
 
-    ##Load basic graphical model results accounting for misses
-    #gResFillDict = loadGModelLabels("basicModelDumb10000.txt")
-    #for path in allPaths:
-    #   pathGResFillDict = gResFillDict[path]
-    #   getGModelLabels("Basic Fill Model Loc",allPaths[path],pathGResFillDict)
-    #compareGModelReactome(allPaths, "Basic Fill Model Loc", "Basic Fill Model Results")
-
-    ##Load basic graphical model results accounting for misses
-    #gResBetterGuessDict = loadGModelLabels("basicModelGuess10000.txt")
-    #for path in allPaths:
-    #   pathGResBetterGuessDict = gResBetterGuessDict[path]
-    #   getGModelLabels("Basic Better Guess Model Loc",allPaths[path],pathGResBetterGuessDict)
-    #compareGModelReactome(allPaths, "Basic Better Guess Model Loc", "Basic Better Guess Model Results")
-
-    ##Load trained graphical model
-    #gTrainedDict = loadGModelLabels("trainedModel10000.txt")
-    #for path in allPaths:
-    #   pathGTrainedDict = gTrainedDict[path]
-    #   getGModelLabels("Trained Model Loc",allPaths[path],pathGTrainedDict)
-    #compareGModelReactome(allPaths, "Trained Model Loc", "Trained Model Results")
-
-    ##Load trained graphical model
-    #gTrainedSDict = loadGModelLabels("trainedModelSepInter10000.txt")
-    #for path in allPaths:
-    #   pathGTrainedSDict = gTrainedSDict[path]
-    #   getGModelLabels("Trained Model Sep Inter Loc",allPaths[path],pathGTrainedSDict)
-    #compareGModelReactome(allPaths, "Trained Model Sep Inter Loc", "Trained Model Sep Inter Results")
-
-    resCols.append(addResult(allPaths, gBasicModelRes,"Basic Model"))
-    resCols.append(addResult(allPaths, "basicModelDumb10000.txt","Basic Fill Model"))
-    resCols.append(addResult(allPaths, "basicModelGuess10000.txt","Basic Better Guess Model"))
-    resCols.append(addResult(allPaths, "trainedNoDataModel53.txt","Trained Model No ComPPI"))
-    resCols.append(addResult(allPaths, "trainedModel10000.txt","Trained Model No Groups"))
-    resCols.append(addResult(allPaths, "trainedModelSepInter10000.txt","Trained Model GMM PottsCS"))
-    #resCols.append(addResult(allPaths, "trainedModel32.txt","Trained Model NN PottsCS"))
-    resCols.append(addResult(allPaths, "trainedModel53.txt","Trained Model RF Concat"))
-
-    pF = open("devBasicReactComPPI.pkl","wb")
-    pkl.dump(allPaths,pF)
-    pF.close()
+    #pF = open("devBasicReactComPPI.pkl","wb")
+    #pkl.dump(allPaths,pF)
+    #pF.close()
+    #makeRFLabel(allPaths,comPPITable)
 
     #pF = open("devBasicReactComPPI.pkl", "rb")
     #allPaths = pkl.load(pF)
     #pF.close()
     #for p in allPaths:
     #    print(p)
-    #    allPaths[p].to_csv("../../data/labeledReactome/"+p, sep="\t", index=False, header=False, columns=["Interactor1","Edge Type", "Interactor2", "ReactomeLoc"])
+    #    print(len(allPaths[p][allPaths[p]["Trained No Complexes Loc"] != "Miss"]["Interactor1"].unique()))
+        #allPaths[p][allPaths[p]["Trained No Complexes Loc"] != "Miss"].to_csv("../../data/dgmResultTablesNoC/"+p, sep="\t", index=False, header=True, columns=["Interactor1","Edge Type", "Interactor2", "ReactomeLoc","Trained No Complexes Loc","Trained RF Concat Loc","ComPPI_Labels","Basic Fill Model Loc"])
     #return
     analyzeReactomeData(allPaths, resCols)
     return
@@ -130,15 +103,22 @@ def main():
 def addResult(allPaths, fName, colName):
     #Load trained graphical model
     gDict = loadGModelLabels(fName)
+    delList = []
     for path in allPaths:
-       pathGDict = gDict[path]
-       getGModelLabels(colName+" Loc",allPaths[path],pathGDict)
+        if path in gDict:
+            pathGDict = gDict[path]
+            getGModelLabels(colName+" Loc",allPaths[path],pathGDict)
+        else:
+            delList.append(path)
+    for p in delList:
+        del allPaths[p]
     compareGModelReactome(allPaths, colName+" Loc", colName+" Results")
     return colName
 
 def analyzeReactomeData(allPaths, rList):
     allEdges = pd.concat(allPaths.values())
-
+    #Remove edges not in model with no complexes
+    allEdges = allEdges[allEdges["Trained No Complexes Loc"] != "Miss"]
     # Look at reactome data alone
     #print("Mean Location Counts: ",allEdges["LocationCount"].mean())
     #print(allEdges["Edge Type"].value_counts())
@@ -170,9 +150,10 @@ def analyzeReactomeData(allPaths, rList):
     for r in resList:
         print("--------------"+r+"----------------")
         print(allEdges[r].value_counts(normalize=True))
-    print(pd.crosstab(allEdges["ReactomeLoc"], allEdges["ComPPI_Labels"]))
-    print(pd.crosstab(allEdges["ReactomeLoc"], allEdges["Basic Better Guess Model Loc"]))
-    print(pd.crosstab(allEdges["ReactomeLoc"], allEdges["Trained Model RF Concat Loc"]))
+    #print(pd.crosstab(allEdges["ReactomeLoc"], allEdges["ComPPI_Labels"]))
+    #print(pd.crosstab(allEdges["ReactomeLoc"], allEdges["Trained RF Concat Loc"]))
+    #print(pd.crosstab(allEdges["ReactomeLoc"], allEdges["Trained No Complexes Loc"]))
+    #print(pd.crosstab(allEdges["ReactomeLoc"], allEdges["H Model 3 Clusters"]))
     meltedDF = allEdges.melt(value_vars=resList, var_name="Model", value_name="Prediction")
     #sns.countplot(data=meltedDF,x="Model",hue="Prediction")
     x,y = 'Model', 'Prediction'
@@ -186,7 +167,7 @@ def analyzeReactomeData(allPaths, rList):
     plt.show()
 
     accList = []
-    accList.append(balanced_accuracy_score(allEdges["ReactomeLoc"], allEdges["ComPPI_Labels"], adjusted=False))
+    accList.append(balanced_accuracy_score(allEdges["ReactomeLoc"], allEdges["ComPPI_Labels"], adjusted=True))
     for r in rList:
         adjAcc = balanced_accuracy_score(allEdges["ReactomeLoc"], allEdges[r+" Loc"], adjusted=False)
         accList.append(adjAcc)
@@ -288,9 +269,9 @@ def getComPPILabels(pathDF, comPPIDict, nameDict):
         locList.append(loc)
         if isTie:
             numTie += 1
-    print(
-        "Percent reactome prots not in comPPI: ", 100 * float(numMiss) / float(numTotal)
-    )
+    #print(
+    #    "Percent reactome prots not in comPPI: ", 100 * float(numMiss) / float(numTotal)
+    #)
     pathDF["ComPPI_Labels"] = locList
     return float(numMiss)/float(numTotal)
 
@@ -409,7 +390,7 @@ def getGModelLabels(colName, pathDF, gResDict):
             locList.append("Miss")
             numMiss += 1
         numTotal += 1
-    print("Basic G Model Miss Percent", float(numMiss) / numTotal)
+    #print("Basic G Model Miss Percent", float(numMiss) / numTotal)
     pathDF[colName] = locList
     return
 
@@ -430,6 +411,40 @@ def loadComPPI(localF):
         localInfoDict[row[c2]] = sorted(locList)
     return localInfoDict
 
+
+def makeRFLabel(allPaths, comPPIDF, colName="randomForestPrediction"):
+    allEdges = pd.concat(allPaths.values())
+    allEdges = allEdges[allEdges["Trained No Complexes Loc"] != "Miss"]
+    featsList = []
+    targets = []
+
+    for ind,row in allEdges.iterrows():
+        i1 = row["Interactor1"]
+        i2 = row["Interactor2"]
+
+        if (i1 not in comPPIDF.index) or (i2 not in comPPIDF.index):
+            print("Miss on ",i1, i2)
+            continue
+
+        com1 = comPPIDF.loc[i1]
+        com2 = comPPIDF.loc[i2]
+
+        com1.index = "N1_" + com1.index
+        com2.index = "N2_" + com2.index
+
+        feats = com1.append(com2)
+        featsList.append(feats)
+        targets.append(row["ReactomeLoc"])
+    featureDF = pd.DataFrame(featsList)
+    X = featureDF.values
+    y = targets
+
+    rf = RandomForestClassifier()
+    scores = cross_val_score(rf, X, y, cv=5)
+
+    print("Random Forest Accuracy:", np.mean(scores))
+    print(scores)
+    return
 
 def saveComPPIProtTable(comPPIDict, nameDict):
 
@@ -465,11 +480,12 @@ def saveComPPIProtTable(comPPIDict, nameDict):
                 locInd += 1
             else:
                 dfColumns[loc].append(0.01)  # Add laplace-ish counts
+                #dfColumns[loc].append(0.00)  # Add laplace-ish counts
 
     comPPIDF = pd.DataFrame(dfColumns, index=nameList)
     comPPIDF = comPPIDF.div(comPPIDF.sum(axis=1), axis=0)  # Normalize rows
-    comPPIDF.to_csv("comPPINodes.tsv", sep="\t", index=True)
-    return
+    #comPPIDF.to_csv("comPPINodesNoNorm.tsv", sep="\t", index=True)
+    return comPPIDF
 
 
 def getMaxLoc(l1, l2):

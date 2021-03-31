@@ -126,22 +126,29 @@ void trainPots(std::string trainFile, std::shared_ptr<CTrainNode> &nodeTrainerPr
     return;
 }
 
-std::map<int, std::string> makeGraphFromFile(std::string fName, CGraphPairwise &graph, std::string comPPIFile, std::shared_ptr<CTrainNode> &nodeTrainerProt, std::shared_ptr<CTrainNode> &nodeTrainerInter, std::shared_ptr<CTrainEdge> &edgeTrainer, int edgeModel)
+std::map<int, std::string> makeGraphFromFile(std::string fName, CGraphPairwise &graph, std::string comPPIFile, std::shared_ptr<CTrainNode> &nodeTrainerProt, std::shared_ptr<CTrainNode> &nodeTrainerInter, std::shared_ptr<CTrainEdge> &edgeTrainer, int edgeModel, std::string outPref)
 {
     std::string n1, n2, eType, eLoc, line, uniprot;
     std::map<std::string, int> nameMap;
     std::map<int, std::string> revNameMap;
     std::map<std::string, std::array<int, 6>> comPPIMap;
-    float comPPIConf;
+    float comPPIConf, nPotCount, ePotCount;
     int nodeID1, nodeID2, edgeID, i;
     vec_float_t vParams = {100, 0.01f};                // What's used in the demo. Should look into.
     if (edgeModel <= 1 || edgeModel == 4) vParams.pop_back();   // Potts and Concat models need ony 1 parameter
-    if (edgeModel == 0) vParams[0] = 1;                         // Emulate "No edges" 
+    if (edgeModel == 0) vParams[0] = 1;                         // Emulate "No edges"
+    nPotCount = 0;
+    ePotCount = 0;
 
     Mat nodePot1(nStates, 1, CV_32FC1);			// node Potential (column-vector)
 	Mat nodePot2(nStates, 1, CV_32FC1);			// node Potential (column-vector)
 	Mat nodePot3(nStates, 1, CV_32FC1);			// node Potential (column-vector)
 	Mat edgePot(nStates, nStates, CV_32FC1);	// edge Potential (matrix)
+	
+    Mat meanNodePot(nStates, 1, CV_32FC1);			// mean node potentials for graph
+	Mat meanEdgePot(nStates, nStates, CV_32FC1);	// mean edge potentials for graph
+    meanNodePot = 0;
+    meanEdgePot = 0;
     
     Mat nodeFVec1(nFeatures, 1, CV_8UC1);       // Node features
     Mat nodeFVec2(nFeatures, 1, CV_8UC1);       // Node features
@@ -213,6 +220,8 @@ std::map<int, std::string> makeGraphFromFile(std::string fName, CGraphPairwise &
         
         if (!nameMap.count(n1)) {
             nodePot1 = nodeTrainerProt->getNodePotentials(nodeFVec1,1.0);
+            meanNodePot = meanNodePot + nodePot1;
+            nPotCount += 1;
             nodeID1 = graph.addNode(nodePot1);
             nameMap.insert(std::pair<std::string, int>(n1, nodeID1));
             //revNameMap.insert(std::pair<int, std::string>(nodeID1, n1));
@@ -222,6 +231,8 @@ std::map<int, std::string> makeGraphFromFile(std::string fName, CGraphPairwise &
         }
         if (!nameMap.count(n2)) {
             nodePot2 = nodeTrainerProt->getNodePotentials(nodeFVec2,1.0);
+            meanNodePot = meanNodePot + nodePot2;
+            nPotCount += 1;
             nodeID2 = graph.addNode(nodePot2);
             nameMap.insert(std::pair<std::string, int>(n2, nodeID2));
             //revNameMap.insert(std::pair<int, std::string>(nodeID1, n1));
@@ -231,19 +242,70 @@ std::map<int, std::string> makeGraphFromFile(std::string fName, CGraphPairwise &
         }
         
         nodePot3 = nodeTrainerInter->getNodePotentials(nodeFVec3,1.0);
+        meanNodePot = meanNodePot + nodePot3;
+        nPotCount += 1;
         edgeID = graph.addNode(nodePot3);
         revNameMap.insert(std::pair<int, std::string>(edgeID, n1+"\t"+n2));
 
         edgePot = edgeTrainer->getEdgePotentials(nodeFVec1, nodeFVec3, vParams);
+        meanEdgePot = meanEdgePot + edgePot;
+        ePotCount += 1;
         graph.addArc(nodeID1, edgeID, edgePot);
         
         edgePot = edgeTrainer->getEdgePotentials(nodeFVec2, nodeFVec3, vParams);
+        meanEdgePot = meanEdgePot + edgePot;
+        ePotCount += 1;
         graph.addArc(nodeID2, edgeID, edgePot);
     }
+    
+    meanNodePot = meanNodePot/nPotCount;
+    meanEdgePot = meanEdgePot/ePotCount;
+    
+    //Should probably make this a function
+    std::string name, ext, oFileName;
+    size_t sep = fName.find_last_of("/");
+    if (sep != std::string::npos)
+        fName = fName.substr(sep + 1, fName.size() - sep - 1);
+
+    size_t dot = fName.find_last_of(".");
+    if (dot != std::string::npos)
+    {
+        name = fName.substr(0, dot);
+        ext  = fName.substr(dot, fName.size() - dot);
+    }
+    else
+    {
+        name = fName;
+        ext  = "";
+    }
+    oFileName = outPref + "pots_"+name+".txt";
+    std::ofstream oFile(oFileName);
+    if (oFile.is_open()){
+        for(int i=0; i<meanNodePot.rows; i++)
+        {
+            for(int j=0; j<meanNodePot.cols; j++)
+            {
+            oFile<<meanNodePot.at<float>(i,j)<<"\t";
+            }
+        oFile<<std::endl;
+        }
+        //for(int i=0; i<meanEdgePot.rows; i++)
+        //{
+        //    for(int j=0; j<meanEdgePot.cols; j++)
+        //    {
+        //    oFile<<meanEdgePot.at<float>(i,j)<<"\t";
+        //    }
+        //oFile<<std::endl;
+        //}
+        oFile.close(); 
+    } else {
+        printf("FILE AINT OPEN MOOM");
+    }
+    
     return revNameMap;
 }
 
-void makeAndInferGraph(std::string gFile, std::string comPPIFile, std::shared_ptr<CTrainNode> &nodeTrainerProt, std::shared_ptr<CTrainNode> &nodeTrainerInter, std::shared_ptr<CTrainEdge> &edgeTrainer, int edgeModel)
+void makeAndInferGraph(std::string gFile, std::string comPPIFile, std::shared_ptr<CTrainNode> &nodeTrainerProt, std::shared_ptr<CTrainNode> &nodeTrainerInter, std::shared_ptr<CTrainEdge> &edgeTrainer, int edgeModel, std::string outPref)
 {
 	size_t			i,j,nNodes;
 	CGraphPairwise	graph(nStates);
@@ -259,7 +321,7 @@ void makeAndInferGraph(std::string gFile, std::string comPPIFile, std::shared_pt
     
     std::array<std::string, 6> allLocs = {"cytosol","extracellular","membrane","mitochondrion","nucleus","secretory-pathway"};
     
-    revNameMap = makeGraphFromFile(gFile, graph, comPPIFile, nodeTrainerProt, nodeTrainerInter, edgeTrainer, edgeModel);
+    revNameMap = makeGraphFromFile(gFile, graph, comPPIFile, nodeTrainerProt, nodeTrainerInter, edgeTrainer, edgeModel, outPref);
     nNodes = graph.getNumNodes();
     
     printf("%s\n", gFile.c_str());
@@ -281,8 +343,9 @@ void makeAndInferGraph(std::string gFile, std::string comPPIFile, std::shared_pt
     }
     
 
-    for (i=0; i < 1; i++){
-        std::string resFileName = "trainedModel_"+name+"_"+std::to_string(i*10000)+".txt";
+    for (i=4; i < 5; i++){
+        //std::string resFileName = "trainedModel_"+name+"_"+std::to_string(i*10000)+".txt";
+        std::string resFileName = outPref+"trainedModel_"+name+".txt";
 	    CInferLBP		infererLBP(graph);
         infererLBP.infer(10000*(i+1));											// Loopy Belief Probagation inference
         vec_byte_t decoding_infererLBP = infererLBP.decode();			// Loopy Belief Probagation decoding
@@ -310,7 +373,7 @@ void makeAndInferGraph(std::string gFile, std::string comPPIFile, std::shared_pt
     }
 }
 
-void trainAndTestGraphs(std::string trainFile, std::string testFile, std::string comPPIFile, int nodeModel, int edgeModel){
+void trainAndTestGraphs(std::string trainFile, std::string testFile, std::string comPPIFile, int nodeModel, int edgeModel, std::string outPref){
     auto nodeTrainerProt = CTrainNode::create(nodeModel, nStates, nFeatures); 
     auto nodeTrainerInter = CTrainNode::create(nodeModel, nStates, nFeatures); 
     auto edgeTrainer = CTrainEdge::create(edgeModel, nStates, nFeatures);
@@ -322,7 +385,7 @@ void trainAndTestGraphs(std::string trainFile, std::string testFile, std::string
     while(std::getline(testFileStream,line))
     {
         std::string fName = line;
-        makeAndInferGraph(fName, comPPIFile, nodeTrainerProt, nodeTrainerInter, edgeTrainer, edgeModel);	
+        makeAndInferGraph(fName, comPPIFile, nodeTrainerProt, nodeTrainerInter, edgeTrainer, edgeModel, outPref);	
     }
     return;
 }
@@ -330,7 +393,7 @@ void trainAndTestGraphs(std::string trainFile, std::string testFile, std::string
 
 int main(int argc, char *argv[])
 {
-	if (argc != 6) {
+	if (argc != 7) {
 		print_help(argv[0]);
 		return 0;
 	}
@@ -339,7 +402,8 @@ int main(int argc, char *argv[])
 	std::string comPPIFile = argv[3];
     int nodeModel   = atoi(argv[4]);
     int edgeModel   = atoi(argv[5]); 
-    trainAndTestGraphs(trainFile, testFile, comPPIFile, nodeModel, edgeModel);
+    std::string outPref   = argv[6]; 
+    trainAndTestGraphs(trainFile, testFile, comPPIFile, nodeModel, edgeModel, outPref);
     
     return 0;
 }
