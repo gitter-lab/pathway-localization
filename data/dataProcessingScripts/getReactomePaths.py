@@ -114,7 +114,7 @@ def getPathwayFiles(reactomeNamesF):
 """
 Takes in a pathway ID and text file.
 Returns a pathway commons-style SIF file with locations as a 4th column.
-A single reaction can have multiple location, seperated by commas
+A single reaction can have multiple locations, seperated by commas
 """
 def getPathwayLocs(pathHSA,pathwayTXT):
     newPathLines = []
@@ -167,8 +167,8 @@ def getPathwayLocs(pathHSA,pathwayTXT):
                     locNameMap[l[1]] = l[0]
                 locs.append(l[1])
             loc = ",".join(locs)
-
-        newLine = "\t".join([r1,eType,r2,loc])
+        #Added mediatorIDs here
+        newLine = "\t".join([r1,eType,r2,loc,lineList[-1]])
         newPathLines.append(newLine)
 
     pathWithLocs = "\n".join(newPathLines)

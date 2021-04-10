@@ -118,7 +118,9 @@ def addResult(allPaths, fName, colName):
 def analyzeReactomeData(allPaths, rList):
     allEdges = pd.concat(allPaths.values())
     #Remove edges not in model with no complexes
-    allEdges = allEdges[allEdges["Trained No Complexes Loc"] != "Miss"]
+    #allEdges = allEdges[allEdges["Trained No Complexes Loc"] != "Miss"]
+    for r in rList:
+        allEdges = allEdges[allEdges[r+" Loc"] != "Miss"]
     # Look at reactome data alone
     #print("Mean Location Counts: ",allEdges["LocationCount"].mean())
     #print(allEdges["Edge Type"].value_counts())
