@@ -1,0 +1,49 @@
+MODELS=['LinearNN', 'SimpleGCN', 'GATCONV', 'GIN2']
+#MODELS=['LinearNN', 'GIN2']
+NETWORKS=['allReactomePaths']
+#FEATURES=['comPPINodes']
+FEATURES=['comPPINodes']
+
+rule make_datasets:
+    input:
+        net="data/{networks}.txt",
+        netV="data/{networks}.txt_val",
+        feat="data/{features}.tsv"
+    output:
+        full="torchDatasets/{networks}-{features}.p",
+        val="torchDatasets/{networks}-{features}.p_val"
+    shell:
+        "python prepPytorchData.py {input.net} {input.feat} {output.full};"
+        "python prepPytorchData.py {input.netV} {input.feat} {output.val}"
+
+rule tune_params:
+    input:
+        "torchDatasets/{networks}-{features}.p_val"
+    params:
+        curModel = "{model}"
+    output:
+        "axRuns/{model}-{networks}-{features}.json"
+    shell:
+        "python localizationPyTorchAx.py {params.curModel} {input} {output}"
+
+rule main_run:
+    input:
+        "axRuns/{model}-{networks}-{features}.json",
+        "torchDatasets/{networks}-{features}.p"
+    output:
+        "runs/{model}-{networks}-{features}.p"
+    shell:
+        "python localizationPyTorchGeo.py {input} {output}"
+
+rule analyze_results:
+    input:
+        expand("runs/{model}-{networks}-{features}.p", model=MODELS,networks=NETWORKS,features=FEATURES)
+    output:
+        "results/allRes.p"
+    shell:
+        "python combineAnalyzeRes.py {input}"
+
+rule all:
+    input:
+        "results/allRes.p"
+
