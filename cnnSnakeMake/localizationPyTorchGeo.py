@@ -40,7 +40,7 @@ def testCNNs(parameterization):
 
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = 'cpu'
+    #device = 'cpu'
     ### CV Models (Just plots the average for now)
     if mName == 'LinearNN':
         models = []

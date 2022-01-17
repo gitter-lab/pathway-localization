@@ -40,7 +40,7 @@ def testCNNs(parameterization):
 
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = 'cpu'
+    #device = 'cpu'
     ### CV Models (Just plots the average for now)
     if mName == 'LinearNN':
         models = []
@@ -242,10 +242,18 @@ if __name__ == "__main__":
         objective_name="accuracy",
         minimize=False)
 
-    for i in range(30):
+    startI = 0
+    for i in range(29,-1,-1):
+        curPath = outF+"_iter"+str(i)
+        if os.path.exists(curPath):
+            startI = i+1
+            ax_client = AxClient.load_from_json_file(curPath)
+            break
+    for i in range(startI,30):
         parameters, trial_index = ax_client.get_next_trial()
         # Local evaluation here can be replaced with deployment to external system.
         ax_client.complete_trial(trial_index=trial_index, raw_data=testCNNs(parameters))
+        ax_client.save_to_json_file(filepath=outF+"_iter"+str(i))
     #num_cores = multiprocessing.cpu_count()
     #print(num_cores)
     #Parallel(n_jobs=num_cores-1)(delayed(runTrial)(ax_client) for i in range(10))
