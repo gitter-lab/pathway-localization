@@ -32,16 +32,17 @@ def testCNNs(parameterization):
     mName = parameterization["mName"]
     epochs = parameterization["epochs"]
     learningRate = parameterization["lRate"]
+    #This parameter denotes that this is validation/model selection and not final training/testing
+    validationRun = parameterization['validationRun']
 
     dataState = torch.load(dataFile)
     train_loaders = dataState['train_loaders']
     test_loaders = dataState['test_loaders']
     dataList = dataState['dataList']
 
-
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    #device = 'cpu'
-    ### CV Models (Just plots the average for now)
+    device = 'cpu'
+
     if mName == 'LinearNN':
         models = []
         for i in range(len(train_loaders)):
@@ -69,18 +70,13 @@ def testCNNs(parameterization):
         for i in range(len(train_loaders)):
             models.append(GIN2(dataList[0],parameterization).to(device))
 
-    #elif mName == 'NODE2VEC'
-    #print("\n\n"+mName,epochs)
-    #models = []
-    #for i in range(len(train_loaders)):
-    #    models.append(NODE2VEC(dataList[0],parameterization))
-
     else:
         print('Invalid Model!')
         return
 
-    accuracy = evalModelCV(models, train_loaders, test_loaders,device, mName, parameterization, epochs,learningRate)
-    return accuracy
+    performance = evalModelCV(models, train_loaders, test_loaders,device, mName,
+                           parameterization, epochs, learningRate, validationRun)
+    return performance
 
 def train(loader, model, optimizer, criterion,device):
     model.train()
@@ -118,10 +114,22 @@ def getEmbedding(loader, model):
             yAll = torch.cat((yAll,data.y), dim=0)
     return embeddingAll, yAll
 
-def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters, epochs = 1000, lr=0.001):
+def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
+                epochs=1000, lr=0.001, validationRun=False):
     optimizers = []
     losses = []
+
+    #We could make these parameters to pass in, but it doesn't seem worth it
     checkpoint_interval = 50
+    print_interval = 50
+    if not validationRun:
+        print_interval = 10
+
+    #Right now we only do early stopping in validation runs
+    #We would need to bring the validation set to the final run
+    patience = 100
+    bestAcc = 0.0
+
     start_epoch = 1
     for i in range(len(train_loaders)):
         optimizers.append(torch.optim.Adam(models[i].parameters(), lr=lr))
@@ -137,26 +145,32 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters, e
     perfDict["Model"] = []
 
     #Load from checkpoint
-    #for i in range(0,epochs,checkpoint_interval):
-    #    if os.path.exists(modelFile+"_checkpoint_0_"+str(i)):
-    #        for f in range(len(train_loaders)):
-    #            checkpoint = torch.load(modelFile+"_checkpoint_"+str(f)+"_"+str(i))
-    #            models[f].load_state_dict(checkpoint['model_state_dict'])
-    #            optimizers[f].load_state_dict(checkpoint['optimizer_state_dict'])
-    #            start_epoch = checkpoint['epoch']
-    #            losses[f] = checkpoint['loss']
-    #        perfDict = torch.load(modelFile+"_checkpoint_perf_"+str(epoch))['perDF']
+    checkpoint_filename = ''
+    if not validationRun:
+        checkpoint_filename = parameters['outputFile']+"_checkpoint"
+    if not validationRun and os.path.exists(checkpoint_filename):
+        checkpoint = torch.load(checkpoint_filename)
+        for i in range(len(train_loaders)):
+            models[i].load_state_dict(checkpoint['model_state_dict'])
+            optimizers[i].load_state_dict(checkpoint['optimizer_state_dict'])
+            losses[i] = checkpoint['loss']
+        start_epoch = checkpoint['epoch']
+        perfDict = checkpoint['perfDict']
 
+    #Start training
+    test_acc_batch_list = []
     for epoch in range(start_epoch, epochs+1):
         train_acc_total = 0.0
         test_acc_total = 0.0
+        test_acc_batch_list = []
         for i in range(len(train_loaders)):
             train(train_loaders[i], models[i], optimizers[i], losses[i], device)
             train_acc = testTraining(train_loaders[i], models[i], device)
             test_acc = testTraining(test_loaders[i], models[i], device)
             train_acc_total += train_acc
             test_acc_total += test_acc
-            if epoch % 1 == 0:
+            test_acc_batch_list.append(test_acc)
+            if not validationRun:
                 perfDict["Epoch"].append(epoch)
                 perfDict["Accuracy"].append(train_acc)
                 perfDict["Fold"].append(i)
@@ -171,38 +185,53 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters, e
         train_acc_list.append(train_acc_total/len(train_loaders))
         test_acc_list.append(test_acc_total/len(train_loaders))
 
-        if (epoch%checkpoint_interval)==0:
+        if validationRun:
+            if bestAcc < test_acc_list[-1]:
+                patienceLeft = patience
+                bestAcc = test_acc_list[-1]
+            else:
+                patienceLeft-=1
+            if patienceLeft==0:
+                print('Stopping early due to lack of validation improvements')
+                break
+
+        if (epoch%print_interval)==0:
             print(f'Epoch: {epoch:03d}, Train Acc: {train_acc_list[-1]:.4f}, Test Acc: {test_acc_list[-1]:.4f}')
-        #    for i in range(len(train_loaders):
-        #        torch.save({
-        #        'epoch': epoch,
-        #        'model_state_dict': models[i].state_dict(),
-        #        'optimizer_state_dict': optimizer[i].state_dict(),
-        #        'loss': losses[i],
-        #        }, modelFile+"_checkpoint_"+str(fold)+"_"+str(epoch))
-        #    torch.save({'perfDict': perfDict},modelFile+"_checkpoint_perf_"+str(epoch))
 
-    perfDF = pd.DataFrame.from_dict(perfDict)
-    model_states=[]
-    optimizer_states=[]
-    for i in range(len(train_loaders)):
-        models[i].eval()
-        model_states.append(models[i].state_dict())
-        optimizer_states.append(optimizers[i].state_dict())
-    torch.save({
-         'parameters':parameters,
-         'perfDF':perfDF,
-         'model_states': model_states,
-         'optimizer_states': optimizer_states,
-         'losses': losses,
-         },parameters['outputFile'])
-    #print(np.mean(test_acc_list),sem(test_acc_list))
-    return {'accuracy': (np.mean(test_acc_list),sem(test_acc_list))}
+        #Tuning runs aren't typically worth the space to checkpoint
+        if not validationRun and epoch%checkpoint_interval==0:
+            model_states=[]
+            optimizer_states=[]
+            for i in range(len(train_loaders)):
+                models[i].eval()
+                model_states.append(models[i].state_dict())
+                optimizer_states.append(optimizers[i].state_dict())
+            torch.save({
+                 'parameters':parameters,
+                 'perfDict':perfDict,
+                 'model_states': model_states,
+                 'optimizer_states': optimizer_states,
+                 'losses': losses,
+                 'epoch': epoch
+                 },checkpoint_filename)
 
-def runTrial(client):
-    parameters, trial_index = ax_client.get_next_trial()
-    ax_client.complete_trial(trial_index=trial_index, raw_data=testCNNs(parameters))
-    return
+    #Finished Training
+    if not validationRun:
+        perfDF = pd.DataFrame.from_dict(perfDict)
+        model_states=[]
+        optimizer_states=[]
+        for i in range(len(train_loaders)):
+            models[i].eval()
+            model_states.append(models[i].state_dict())
+            optimizer_states.append(optimizers[i].state_dict())
+        torch.save({
+             'parameters':parameters,
+             'perfDF':perfDF,
+             'model_states': model_states,
+             'optimizer_states': optimizer_states,
+             'losses': losses,
+             },parameters['outputFile'])
+    return {'accuracy': (np.mean(test_acc_batch_list),sem(test_acc_batch_list))}
 
 if __name__ == "__main__":
     inRun = argv[1]
@@ -213,6 +242,9 @@ if __name__ == "__main__":
     best_parameters, values = ax_client.get_best_parameters()
     best_parameters['dataFile'] = inData
     best_parameters['outputFile'] = outF
+    best_parameters['epochs'] = 200
+    best_parameters['validationRun'] = False
+    print(best_parameters)
     testCNNs(best_parameters)
 
 

@@ -6,7 +6,7 @@ import networkx as nx
 
 def getLocData(networksFile, featuresFile):
     #Load in the reactome networks as a dictionary of dataFrames
-
+    sns.set_theme(style="darkgrid")
     #We will not add pathways with fewer nodes than this
     MIN_NETWORK_SIZE_THRESHOLD = 4
 
@@ -56,18 +56,22 @@ def getLocData(networksFile, featuresFile):
     #print(conflictDF)
     #print(conflictDFNum)
     #print(conflictDF[conflictDF>1])
-    print("Number of edges where at least 1 other edge has the same features: %d" %sum(conflictDFNum[conflictDF>1]))
+    print("Number of edges where at least 1 other edge has the same features but a different class: %d" %sum(conflictDFNum[conflictDF>1]))
     meltedDF = allDataDF.melt(id_vars=['Location'], value_vars=fList, var_name='comPPI', value_name='Probability')
     meltedDF['comPPI'] = meltedDF['comPPI'].str[:-2]
     meltedDF = meltedDF.dropna()
     meltedDF['Match'] = meltedDF['Location']==meltedDF['comPPI']
-    sns.boxplot(data=meltedDF, x='Match',y='Probability')
+    sns.boxplot(data=meltedDF, x='Location',y='Probability',hue='comPPI',hue_order=locList,order=locList)
     plt.show()
-    sns.boxplot(data=meltedDF, x='Location',y='Probability',hue='comPPI')
+
+    #Get maxes
+    #print(allDataDF[["Location"]])
+    allDataDF['Loc_Max'] = allDataDF[fList].idxmax(axis=1).str[:-2]
+    sns.catplot(data=allDataDF, kind='count', x="Location", row='Loc_Max',order=locList)
     plt.show()
 
     #Calculate theoretical max base classification performance
-    print(meltedDF)
+    #print(meltedDF)
     return
 
     #FeatureHistograms
@@ -145,7 +149,7 @@ def makeOutD(locList,fD,i1,suff,miss=False):
 
 if __name__ == "__main__":
     #networksFile = 'allDevReactomePathsCom.txt'
-    networksFile = 'allReactomePaths.txt'
-    featuresFile = '../scripts/exploratoryScripts/comPPINodes.tsv'
+    networksFile = 'data/allPathBank.txt'
+    featuresFile = 'data/compartmentsNodes.tsv'
     #featuresFile = '../data/uniprotKeywords/mergedKeyWords_5.tsv'
     getLocData(networksFile, featuresFile)
