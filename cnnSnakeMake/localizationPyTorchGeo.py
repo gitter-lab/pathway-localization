@@ -19,8 +19,9 @@ import pickle as pkl
 import os.path
 from scipy.stats import sem
 from ax.service.ax_client import AxClient
-import multiprocessing
-from joblib import Parallel, delayed
+from sklearn.metrics import balanced_accuracy_score
+import warnings
+
 
 seed = 24
 torch.manual_seed(seed)
@@ -92,13 +93,24 @@ def testTraining(loader, model,device):
      model.eval()
      correct = 0
      total = 0
+     allPred = None
+     allY = None
      for data in loader:  # Iterate in batches over the training/test dataset.
          data.to(device)
          out,e = model(data.x, data.edge_index, data.batch)
          pred = out.argmax(dim=1)  # Use the class with highest probability.
-         correct += int((pred == data.y).sum())  # Check against ground-truth labels.
-         total += len(data.y)
-     return correct / total  # Derive ratio of correct predictions.
+         if allPred is None:
+             allPred = pred.numpy()
+             allY = data.y.numpy()
+         else:
+            allPred = np.concatenate(allPred,pred.numpy())
+            allY = np.concatenate(allY, data.y.numpy)
+     #We supress warnings otherwise we get yelled at for the first few epochs every time
+     bal_acc = 0
+     with warnings.catch_warnings():
+         warnings.simplefilter('ignore', category=UserWarning)
+         bal_acc = balanced_accuracy_score(allY, allPred)
+     return bal_acc  # Derive ratio of correct predictions.
 
 def getEmbedding(loader, model):
     model.eval()
@@ -242,7 +254,7 @@ if __name__ == "__main__":
     best_parameters, values = ax_client.get_best_parameters()
     best_parameters['dataFile'] = inData
     best_parameters['outputFile'] = outF
-    best_parameters['epochs'] = 200
+    best_parameters['epochs'] = 2000
     best_parameters['validationRun'] = False
     print(best_parameters)
     testCNNs(best_parameters)

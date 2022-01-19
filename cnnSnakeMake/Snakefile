@@ -1,8 +1,13 @@
 MODELS=['LinearNN', 'SimpleGCN', 'GATCONV', 'GIN2']
+#MODELS=['LinearNN', 'SimpleGCN', 'GIN2']
 #MODELS=['LinearNN', 'GIN2']
-NETWORKS=['allReactomePaths']
-#FEATURES=['comPPINodes']
+#NETWORKS=['allReactomePaths','allPathBank']
+#NETWORKS=['allReactomePaths','allPathBank']
+NETWORKS=['somePathBank']
+FEATURES=['comPPINodes','compartmentsNodes']
 FEATURES=['comPPINodes']
+#FEATURES=['comPPINodes','compartmentsNodes','mergedKeyWords_5']
+#FEATURES=['compartmentsNodes']
 
 rule make_datasets:
     input:
@@ -24,7 +29,7 @@ rule tune_params:
     output:
         "axRuns/{model}-{networks}-{features}.json"
     shell:
-        "python localizationPyTorchAx.py {params.curModel} {input} {output}"
+        "python localizationTuningAx.py {params.curModel} {input} {output}"
 
 rule main_run:
     input:

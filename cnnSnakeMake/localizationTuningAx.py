@@ -39,16 +39,17 @@ if __name__ == "__main__":
 
     parameters=[
         {"name": "lRate", "type": "range", "bounds": [1e-5, 0.01], "log_scale": True},
-        {"name": "epochs", "type": "fixed", "value_type": "int", "value": 100},
+        {"name": "l_depth", "type": "range", "value_type": "int", "bounds": [1, 10]},
+        {"name": "epochs", "type": "fixed", "value_type": "int", "value": 1000},
         {"name": "dataFile", "type": "fixed", "value_type": "str", "value": dataFile},
         {"name": "mName", "type": "fixed", "value_type": "str", "value": mName},
         {"name": "validationRun", "type": "fixed", "value_type": "bool", "value": True}]
     if mName == 'LinearNN':
         parameters.append({"name": "dim", "type": "range", "value_type": "int", "bounds": [24, 128]})
+        parameters.append({"name": "activation", "type": "choice", "value_type": "str", "values": ['relu','tanh']})
     elif mName == 'SimpleGCN':
         parameters.append({"name": "dim", "type": "range", "value_type": "int", "bounds": [24, 128]})
         parameters.append({"name": "c_depth", "type": "range", "value_type": "int", "bounds": [1, 10]})
-        parameters.append({"name": "l_depth", "type": "range", "value_type": "int", "bounds": [1, 10]})
     elif mName == 'GATCONV':
         parameters.append({"name": "dim", "type": "range", "value_type": "int", "bounds": [12, 48]})
         parameters.append({"name": "c_depth", "type": "range", "value_type": "int", "bounds": [1, 10]})
@@ -75,7 +76,7 @@ if __name__ == "__main__":
             startI = i+1
             ax_client = AxClient.load_from_json_file(curPath)
             break
-    for i in range(startI,3):
+    for i in range(startI,30):
         parameters, trial_index = ax_client.get_next_trial()
         #We stalled out, no need to continue
         if pastParams1 == parameters:
