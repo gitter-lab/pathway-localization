@@ -25,59 +25,15 @@ import os.path
 
 seed = 24
 torch.manual_seed(seed)
-np.random.seed(seed)
+np.random.seed(seed) #TODO numpy now reccomends using generators to create random states
 
-def getCNNData(networksFile, featuresFile, outFile):
-    #Load in the reactome networks as a dictionary of dataFrames
-
-    #We will not add pathways with fewer nodes than this
-    MIN_NETWORK_SIZE_THRESHOLD = 4
-    EVIDENCE_THRESHOLD_LOWER = 0.0
-    EVIDENCE_THRESHOLD_UPPER = 9999
-
-    allPathDFs = dict()
-    allPathNets = dict()
-
-    locList = ["cytosol","extracellular","membrane","nucleus","secretory-pathway","mitochondrion"]
-    locDict = {"cytosol":0,"extracellular":1,"membrane":2,"mitochondrion":5,"nucleus":3,"secretory-pathway":4}
-
-    colNames = ["Interactor1", "Edge Type", "Interactor2", "Location"]
-    for line in open(networksFile, "r"):
-        pName = line.strip().split("/")[-1]
-        pathDF = pd.read_csv(line.strip(), sep="\t", header=None, names=colNames, dtype=str)
-        pathDF["loc_feat"] = pathDF['Location'].map(locDict)
-        if len(pathDF) >= MIN_NETWORK_SIZE_THRESHOLD:
-            allPathDFs[pName] = pathDF
-            allPathNets[pName] = nx.from_pandas_edgelist(pathDF, source='Interactor1',
-                                                         target='Interactor2', edge_attr= ['Edge Type','Location','loc_feat'])
-    print("Loaded in %d pathways" %len(allPathDFs))
-
-
-    #Load in all comPPI Data as a dataframe too
-    featuresDF = pd.read_csv(featuresFile, sep="\t", index_col="uniprot")
-    featuresDF = featuresDF.where(featuresDF > EVIDENCE_THRESHOLD_LOWER, 0)
-    featuresDF = featuresDF.where(featuresDF < EVIDENCE_THRESHOLD_UPPER, 0)
-    featuresDict = featuresDF.to_dict('index')
-
-    #Make a uniform attribute row for misses
-    uniform = dict()
-    for feat in featuresDF.columns:
-        uniform[feat] = 1.0/(len(featuresDF.columns))
-
-
-    #Now merge it to the created networks
-    for p in allPathNets:
-        net = allPathNets[p]
-        #Give missing data a uniform distribution
-        for k in net.nodes():
-            if k not in featuresDict:
-                featuresDict[k] = uniform
-        nx.set_node_attributes(net, featuresDict)
+def getCNNData(networks_file, features_file, out_file):
+    allPathNets, allPathDFs, featuresDF, locList, locDict, pOrder = loc_data_to_tables(networks_file, features_file)
 
     #So I'll want a graph object for each pathway as a networkx graph
     dataList = []
     nameMap = dict()
-    for p in allPathNets:
+    for p in pOrder:
         nameMap[p] = len(dataList)
         graphData = from_networkx(allPathNets[p], group_node_attrs=all, group_edge_attrs=['loc_feat'])
         graphData['y'] = graphData.edge_attr.squeeze(1)
@@ -87,7 +43,6 @@ def getCNNData(networksFile, featuresFile, outFile):
     # ### Train-Test Split With Mini-Batching
     nFolds = 5
     kf = KFold(n_splits = nFolds)
-    np.random.shuffle(dataList)
 
     train_sets = []
     test_sets = []
@@ -115,19 +70,72 @@ def getCNNData(networksFile, featuresFile, outFile):
     dataState['train_loaders'] = train_loaders
     dataState['test_loaders'] = test_loaders
     dataState['dataList'] = dataList
-    print("Saving ",outFile)
-    torch.save(dataState, outFile)
+    print("Saving ",out_file)
+    torch.save(dataState, out_file)
     return
 
+def loc_data_to_tables(networks_file, features_file):
+    #Load in the reactome networks as a dictionary of dataFrames
+
+    #We will not add pathways with fewer nodes than this
+    MIN_NETWORK_SIZE_THRESHOLD = 4
+    EVIDENCE_THRESHOLD_LOWER = 0.0
+    EVIDENCE_THRESHOLD_UPPER = 9999
+
+    allPathDFs = dict()
+    allPathNets = dict()
+
+    locList = ["cytosol","extracellular","membrane","nucleus","secretory-pathway","mitochondrion"]
+    locDict = {"cytosol":0,"extracellular":1,"membrane":2,"mitochondrion":5,"nucleus":3,"secretory-pathway":4}
+
+    colNames = ["Interactor1", "Edge Type", "Interactor2", "Location"]
+    for line in open(networks_file, "r"):
+        pName = line.strip().split("/")[-1]
+        pathDF = pd.read_csv(line.strip(), sep="\t", header=None, names=colNames, dtype=str)
+        pathDF["loc_feat"] = pathDF['Location'].map(locDict)
+        if len(pathDF) >= MIN_NETWORK_SIZE_THRESHOLD:
+            allPathDFs[pName] = pathDF
+            allPathNets[pName] = nx.from_pandas_edgelist(pathDF, source='Interactor1',
+                                                         target='Interactor2', edge_attr= ['Edge Type','Location','loc_feat'])
+    print("Loaded in %d pathways" %len(allPathDFs))
+
+
+    #Load in all comPPI Data as a dataframe too
+    featuresDF = pd.read_csv(features_file, sep="\t", index_col="uniprot")
+    featuresDF = featuresDF.where(featuresDF > EVIDENCE_THRESHOLD_LOWER, 0)
+    featuresDF = featuresDF.where(featuresDF < EVIDENCE_THRESHOLD_UPPER, 0)
+    featuresDict = featuresDF.to_dict('index')
+
+    #Make a uniform attribute row for misses
+    uniform = dict()
+    for feat in featuresDF.columns:
+        uniform[feat] = 1.0/(len(featuresDF.columns))
+
+
+    #Now merge it to the created networks
+    for p in allPathNets:
+        net = allPathNets[p]
+        #Give missing data a uniform distribution
+        for k in net.nodes():
+            if k not in featuresDict:
+                featuresDict[k] = uniform
+        nx.set_node_attributes(net, featuresDict)
+
+    #Make sure we have a canonical ordering for all models
+    pOrder = list(allPathNets.keys())
+    np.random.shuffle(pOrder)
+
+    return allPathNets, allPathDFs, featuresDF, locList, locDict, pOrder
+
 if __name__ == "__main__":
-    networksFile = argv[1]
-    featuresFile = argv[2]
+    networks_file = argv[1]
+    features_file = argv[2]
     outFile = argv[3]
 
-    #networksFile = 'allDevReactomePathsCom.txt'
-    #networksFile = 'allDevReactomePaths.txt'
-    #featuresFile = '../scripts/exploratoryScripts/comPPINodes.tsv'
-    #featuresFile = '../data/uniprotKeywords/mergedKeyWords_5.tsv'
-    getCNNData(networksFile, featuresFile, outFile)
+    #networks_file = 'allDevReactomePathsCom.txt'
+    #networks_file = 'allDevReactomePaths.txt'
+    #features_file = '../scripts/exploratoryScripts/comPPINodes.tsv'
+    #features_file = '../data/uniprotKeywords/mergedKeyWords_5.tsv'
+    getCNNData(networks_file, features_file, outFile)
 
 
