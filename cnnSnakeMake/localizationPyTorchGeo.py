@@ -42,7 +42,7 @@ def testCNNs(parameterization):
     dataList = dataState['dataList']
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = 'cpu'
+    #device = 'cpu'
 
     if mName == 'LinearNN':
         models = []
@@ -100,11 +100,11 @@ def testTraining(loader, model,device):
          out,e = model(data.x, data.edge_index, data.batch)
          pred = out.argmax(dim=1)  # Use the class with highest probability.
          if allPred is None:
-             allPred = pred.numpy()
-             allY = data.y.numpy()
+             allPred = pred.cpu().numpy()
+             allY = data.y.cpu().numpy()
          else:
-            allPred = np.concatenate(allPred,pred.numpy())
-            allY = np.concatenate(allY, data.y.numpy)
+            allPred = np.concatenate((allPred,pred.cpu().numpy()))
+            allY = np.concatenate((allY, data.y.cpu().numpy()))
      #We supress warnings otherwise we get yelled at for the first few epochs every time
      bal_acc = 0
      with warnings.catch_warnings():
@@ -162,15 +162,18 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
         checkpoint_filename = parameters['outputFile']+"_checkpoint"
     if not validationRun and os.path.exists(checkpoint_filename):
         checkpoint = torch.load(checkpoint_filename)
+        model_states = checkpoint['model_states']
+        optimizer_states = checkpoint['optimizer_states']
+        losses = checkpoint['losses']
         for i in range(len(train_loaders)):
-            models[i].load_state_dict(checkpoint['model_state_dict'])
-            optimizers[i].load_state_dict(checkpoint['optimizer_state_dict'])
-            losses[i] = checkpoint['loss']
+            models[i].load_state_dict(model_states[i])
+            optimizers[i].load_state_dict(optimizer_states[i])
         start_epoch = checkpoint['epoch']
         perfDict = checkpoint['perfDict']
 
     #Start training
     test_acc_batch_list = []
+    patienceLeft = patience
     for epoch in range(start_epoch, epochs+1):
         train_acc_total = 0.0
         test_acc_total = 0.0

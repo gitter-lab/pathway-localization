@@ -17,6 +17,7 @@ class LinearNN(torch.nn.Module):
         dim = mParams['dim']
         dim2 = max(1,math.ceil(dim/2.0))
         dim4 = max(1,math.ceil(dim/4.0))
+        self.dropout_chance = mParams['dropout']
         l_depth = mParams['l_depth']
 
         #Programatically set activation function
@@ -41,7 +42,7 @@ class LinearNN(torch.nn.Module):
         for layer in self.lin_list:
             h = layer(h)
             h = self.activation_func(h)
-        h = F.dropout(h, p=0.5, training=self.training)
+        h = F.dropout(h, p=self.dropout_chance, training=self.training)
         out = self.classifier(h)
 
         return out, h
@@ -53,6 +54,7 @@ class SimpleGCN(torch.nn.Module):
         dim = mParams['dim']
         dim2 = max(1,math.ceil(dim/2.0))
         dim4 = max(1,math.ceil(dim/4.0))
+        self.dropout_chance = mParams['dropout']
         c_depth = mParams['c_depth']
         l_depth = mParams['l_depth']
         self.lin_list = torch.nn.ModuleList()
@@ -71,7 +73,7 @@ class SimpleGCN(torch.nn.Module):
             h = layer(h, edge_index).relu()
         for layer in self.lin_list:
             h = layer(h).relu()
-        h = F.dropout(h, p=0.5, training=self.training)
+        h = F.dropout(h, p=self.dropout_chance, training=self.training)
 
         #Take the node embeddings and concat nodes for each edge
         e = torch.cat((h[edge_index[0]], h[edge_index[1]]), dim=1)
@@ -94,6 +96,7 @@ class GATCONV(torch.nn.Module):
         dim = mParams['dim']
         dim2 = max(1,math.ceil(dim/2.0))
         dim4 = max(1,math.ceil(dim/4.0))
+        self.dropout_chance = mParams['dropout']
         c_depth = mParams['c_depth']
         l_depth = mParams['l_depth']
         num_heads = mParams['num_heads']
@@ -117,7 +120,7 @@ class GATCONV(torch.nn.Module):
         h = self.l1(h).relu()
         for layer in self.lin_list:
             h = layer(h).relu()
-        h = F.dropout(h, p=0.5, training=self.training)#Respects to dropout
+        h = F.dropout(h, p=self.dropout_chance, training=self.training)
 
         #Take the node embeddings and concat nodes for each edge
         e = torch.cat((h[edge_index[0]], h[edge_index[1]]), dim=1)
@@ -134,6 +137,7 @@ class GIN2(torch.nn.Module):
         dim = mParams['dim']
         dim2 = max(1,math.ceil(dim/2.0))
         dim4 = max(1,math.ceil(dim/4.0))
+        self.dropout_chance = mParams['dropout']
         c_depth = mParams['c_depth']
         l_depth = mParams['l_depth']
         self.conv1 = GINConv(Sequential(Linear(dataset.num_features, dim), BatchNorm1d(dim), ReLU(),
@@ -153,7 +157,7 @@ class GIN2(torch.nn.Module):
             h = layer(h, edge_index).relu()
         for layer in self.lin_list:
             h = layer(h).relu()
-        h = F.dropout(h, p=0.5, training=self.training)
+        h = F.dropout(h, p=self.dropout_chance, training=self.training)
 
         #Take the node embeddings and concat nodes for each edge
         e = torch.cat((h[edge_index[0]], h[edge_index[1]]), dim=1)

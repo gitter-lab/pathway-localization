@@ -21,9 +21,10 @@ from scipy.stats import sem
 from ax.service.ax_client import AxClient
 import multiprocessing
 from joblib import Parallel, delayed
-from sklearn.metrics import accuracy_score,matthews_corrcoef,f1_score
+from sklearn.metrics import accuracy_score,matthews_corrcoef,f1_score,balanced_accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+import warnings
 
 seed = 24
 torch.manual_seed(seed)
@@ -77,8 +78,22 @@ def evalCNNs(inFile):
         print('Invalid Model!')
         return
     predList,yList = evalModels(models, train_loaders, test_loaders,device, mName, parameterization, resultsData,learningRate)
-    metrics = getMetricLists(predList, yList)
-    return metrics
+    print("Loading %d instances to eval" %(len(yList)))
+    metrics, mergedMetrics = getMetricLists(predList, yList)
+    num_inst = len(yList)
+    metrics['model'] = [mName]*num_inst
+
+    dataFList = dataFile.split('-')
+    pathwaySet = dataFList[0]
+    features = dataFList[1][:-2] #get rid of '.p'
+    metrics['data'] = [pathwaySet]*num_inst
+    metrics['features'] = [features]*num_inst
+
+    mergedMetrics['model'] = [mName]
+    mergedMetrics['data'] = [pathwaySet]
+    mergedMetrics['features'] = [features]
+
+    return metrics,mergedMetrics
 
 def getOuts(loader, model, device):
      model.eval()
@@ -86,7 +101,7 @@ def getOuts(loader, model, device):
      total = 0
      predList = []
      yList = []
-     for data in loader:  # Iterate in batches over the training/test dataset.
+     for data in loader:
          data.to(device)
          out,e = model(data.x, data.edge_index, data.batch)
          pred = out.argmax(dim=1)  # Use the class with highest probability.
@@ -99,22 +114,45 @@ def getOuts(loader, model, device):
             yB = torch.masked_select(data.y, (edgeBatch==i))
             predList.append(predB)
             yList.append(yB)
-     return predList,yList  # Derive ratio of correct predictions.
+     return predList,yList
 
 def getMetricLists(predList,yList):
     mccList = []
     accList = []
     f1List = []
+    baccList = []
+    sizeList = []
+    totalPred = None
+    totalY = None
     for i in range(len(predList)):
         pred = predList[i].numpy()
         y = yList[i].numpy()
-        mcc = matthews_corrcoef(y,pred)
-        f1 = f1_score(y, pred, average='micro')
-        acc = accuracy_score(y, pred)
-        mccList.append(mcc)
-        f1List.append(f1)
-        accList.append(acc)
-    return {'mcc':mccList, 'f1':f1List, 'acc':accList}
+        if totalPred is None:
+            totalPred = pred
+            totalY = y
+        else:
+            totalPred = np.concatenate((totalPred, pred))
+            totalY = np.concatenate((totalY, y))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=UserWarning)
+            mcc = matthews_corrcoef(y,pred)
+            f1 = f1_score(y, pred, average='micro')
+            acc = accuracy_score(y, pred)
+            bacc = balanced_accuracy_score(y, pred)
+            mccList.append(mcc)
+            f1List.append(f1)
+            accList.append(acc)
+            baccList.append(bacc)
+            sizeList.append(len(y))
+
+    netOut = {'mcc':mccList, 'f1':f1List, 'acc':accList, 'bal_acc':baccList, 'p_size':sizeList}
+    allOut = {'mcc':[matthews_corrcoef(totalY, totalPred)],
+              'f1':[f1_score(totalY, totalPred, average='micro')],
+              'acc':[accuracy_score(totalY, totalPred)],
+              'bal_acc':[balanced_accuracy_score(totalY, totalPred)],
+              'p_size':[len(totalY)]}
+    return netOut, allOut
+
 
 def getEmbedding(loader, model):
     model.eval()
@@ -147,25 +185,42 @@ def evalModels(models, train_loaders, test_loaders,device, mName, parameters, re
         yList += ys
     return predList,yList
 
+def plotMetric(metricDF, metric_name, x_val = None, hue=None, title=None, ax=None):
+    if "Merged" in title:
+        sns.barplot(x=x_val,y=metric_name, hue=hue, data=metricDF, ax=ax)
+    else:
+        sns.boxplot(x=x_val,y=metric_name, hue=hue, data=metricDF, ax=ax)
+    plt.title(title)
+    plt.show()
 
 if __name__ == "__main__":
     fList = []
     for f in argv[1:]:
         fList.append(f)
     perfs = dict()
-    perfs['model']=[]
+    perfsMerged = dict()
     for f in fList:
-        metrics = evalCNNs(f)
+        metrics, mergedMetrics = evalCNNs(f)
         numInst = 0
         for m in metrics:
             if not m in perfs:
                 perfs[m] = []
+                perfsMerged[m] = []
             perfs[m] += metrics[m]
+            perfsMerged[m] += mergedMetrics[m]
             numInst = len(metrics[m])
-        perfs['model']+=[f]*numInst
     metricDF = pd.DataFrame.from_dict(perfs)
-    #sns.boxplot(x='model',y='mcc',data=metricDF)
-    #plt.show()
+    metricMergedDF = pd.DataFrame.from_dict(perfsMerged)
+
+
+    for dataF in metricDF['data'].unique():
+        sub_metricDF = metricDF[metricDF['data']==dataF]
+        sub_metricMergedDF = metricMergedDF[metricMergedDF['data']==dataF]
+        plotMetric(sub_metricMergedDF, 'bal_acc', x_val='model', hue='features',title="Merged"+dataF)
+        plotMetric(sub_metricDF, 'acc', x_val='model', hue='features',title=dataF)
+        plotMetric(sub_metricDF, 'bal_acc', x_val='model', hue='features',title=dataF)
+        plotMetric(sub_metricDF, 'f1', x_val='model', hue='features',title=dataF)
+        plotMetric(sub_metricDF, 'mcc', x_val='model', hue='features',title=dataF)
     torch.save({'metrics':metricDF},'results/allRes.p')
 
 

@@ -1,15 +1,46 @@
 MODELS=['LinearNN', 'SimpleGCN', 'GATCONV', 'GIN2']
 #MODELS=['LinearNN', 'SimpleGCN', 'GIN2']
 #MODELS=['LinearNN', 'GIN2']
+#SKLEARN_MODELS=['logit','rf']
 #NETWORKS=['allReactomePaths','allPathBank']
-#NETWORKS=['allReactomePaths','allPathBank']
-NETWORKS=['somePathBank']
-FEATURES=['comPPINodes','compartmentsNodes']
-FEATURES=['comPPINodes']
-#FEATURES=['comPPINodes','compartmentsNodes','mergedKeyWords_5']
+NETWORKS=['allReactomePaths','allPathBank']
+#NETWORKS=['somePathBank']
+#FEATURES=['comPPINodes','compartmentsNodes']
+#FEATURES=['comPPINodes']
+FEATURES=['comPPINodes','compartmentsNodes','mergedKeyWords_5']
 #FEATURES=['compartmentsNodes']
 
-rule make_datasets:
+
+#The PGM code is tricky to install and uses c++, so it's not currently automatable. 
+#Right now we just assume you have the compiled code in the right places. 
+#rule pgm_runs:
+#    input:
+#        net="data/{networks}.txt",
+#        netV="data/{networks}.txt_val",
+#        feat="data/{features}.tsv"
+#    params:
+#        curModel = "{pgm_model}"
+#        oDir = "runs/pgm_{pgm_model}-{networks}-{features}"
+#    output:
+#        full = "runs/pgm_{pgm_model}-{networks}-{features}.p"
+#    shell:
+#        "python sklearnModels.py {input.net} {input.netV} {input.feat} {params.curModel} {output.full};"
+
+#Right now the entire sklearn workflow takes <5 minutes to run, 
+#so it feels like wasted effort to break this into multiple rules 
+rule sklearn_runs:
+    input:
+        net="data/{networks}.txt",
+        netV="data/{networks}.txt_val",
+        feat="data/{features}.tsv"
+    params:
+        curModel = "{sk_model}"
+    output:
+        "runs/sk_{sk_model}-{networks}-{features}.p"
+    shell:
+        "python sklearnModels.py {input.net} {input.netV} {input.feat} {params.curModel} {output.full};"
+
+rule make_pytorch_datasets:
     input:
         net="data/{networks}.txt",
         netV="data/{networks}.txt_val",
@@ -21,7 +52,7 @@ rule make_datasets:
         "python prepPytorchData.py {input.net} {input.feat} {output.full};"
         "python prepPytorchData.py {input.netV} {input.feat} {output.val}"
 
-rule tune_params:
+rule tune_pytorch_params:
     input:
         "torchDatasets/{networks}-{features}.p_val"
     params:
@@ -31,7 +62,7 @@ rule tune_params:
     shell:
         "python localizationTuningAx.py {params.curModel} {input} {output}"
 
-rule main_run:
+rule pytorch_run:
     input:
         "axRuns/{model}-{networks}-{features}.json",
         "torchDatasets/{networks}-{features}.p"
@@ -43,6 +74,7 @@ rule main_run:
 rule analyze_results:
     input:
         expand("runs/{model}-{networks}-{features}.p", model=MODELS,networks=NETWORKS,features=FEATURES)
+        #expand("runs/sk_{sk_model}-{networks}-{features}.p", sk_model=SKLEARN_MODELS,networks=NETWORKS,features=FEATURES)
     output:
         "results/allRes.p"
     shell:

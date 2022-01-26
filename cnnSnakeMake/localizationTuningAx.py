@@ -39,7 +39,8 @@ if __name__ == "__main__":
 
     parameters=[
         {"name": "lRate", "type": "range", "bounds": [1e-5, 0.01], "log_scale": True},
-        {"name": "l_depth", "type": "range", "value_type": "int", "bounds": [1, 10]},
+        {"name": "l_depth", "type": "range", "value_type": "int", "bounds": [1, 5]},
+        {"name": "dropout", "type": "choice", "value_type": "float", "values": [0.0, 0.5]},
         {"name": "epochs", "type": "fixed", "value_type": "int", "value": 1000},
         {"name": "dataFile", "type": "fixed", "value_type": "str", "value": dataFile},
         {"name": "mName", "type": "fixed", "value_type": "str", "value": mName},
