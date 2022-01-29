@@ -45,46 +45,43 @@ def evalCNNs(inFile):
     test_loaders = dataState['test_loaders']
     dataList = dataState['dataList']
 
-    device='cpu'
-
     ### CV Models (Just plots the average for now)
     if mName == 'LinearNN':
         models = []
         for i in range(len(train_loaders)):
             #There was some debate online about if deepcopy works, so let's just make new ones
             #dataList[0] just shows the model the type of data shape it's looking at
-            models.append(LinearNN(dataList[0],parameterization).to(device))
+            models.append(LinearNN(dataList[0],parameterization))
 
     elif mName == 'SimpleGCN':
         models = []
         for i in range(len(train_loaders)):
-            models.append(SimpleGCN(dataList[0],parameterization).to(device))
+            models.append(SimpleGCN(dataList[0],parameterization))
 
     elif mName == 'GATCONV':
         models = []
         for i in range(len(train_loaders)):
-            models.append(GATCONV(dataList[0],parameterization).to(device))
+            models.append(GATCONV(dataList[0],parameterization))
 
     elif mName == 'PANCONV':
         models = []
         for i in range(len(train_loaders)):
-            models.append(PANCONV(dataList[0],parameterization).to(device))
+            models.append(PANCONV(dataList[0],parameterization))
 
     elif mName == 'GIN2':
         models = []
         for i in range(len(train_loaders)):
-            models.append(GIN2(dataList[0],parameterization).to(device))
+            models.append(GIN2(dataList[0],parameterization))
     else:
         print('Invalid Model!')
         return
-    predList,yList = evalModels(models, train_loaders, test_loaders,device, mName, parameterization, resultsData,learningRate)
-    print("Loading %d instances to eval" %(len(yList)))
+    predList,yList = evalModels(models, train_loaders, test_loaders, mName, parameterization, resultsData,learningRate)
     metrics, mergedMetrics = getMetricLists(predList, yList)
     num_inst = len(yList)
     metrics['model'] = [mName]*num_inst
 
     dataFList = dataFile.split('-')
-    pathwaySet = dataFList[0]
+    pathwaySet = dataFList[0].split('/')[-1]
     features = dataFList[1][:-2] #get rid of '.p'
     metrics['data'] = [pathwaySet]*num_inst
     metrics['features'] = [features]*num_inst
@@ -95,14 +92,109 @@ def evalCNNs(inFile):
 
     return metrics,mergedMetrics
 
-def getOuts(loader, model, device):
+def evalPGM(inFile):
+    locList = ["cytosol","extracellular","membrane","nucleus","secretory-pathway","mitochondrion"]
+    locDict = {"cytosol":0,"extracellular":1,"membrane":2,"mitochondrion":5,"nucleus":3,"secretory-pathway":4}
+    colNames = ["Interactor1", "Edge Type", "Interactor2", "Location"]
+
+    resultsData = torch.load(inFile)
+    inF = resultsData['inF']
+    mName = resultsData['mName']
+    netF = resultsData['netF']
+
+    allPathDF = dict()
+    for line in open(netF, "r"):
+        pName = line.strip().split("/")[-1]
+        pathDF = pd.read_csv(line.strip(), sep="\t", header=None, names=colNames, dtype=str)
+        pathDF["edgeStr"] = pathDF["Interactor1"] + "_" + pathDF["Interactor2"]
+        allPathDF[pName] = pathDF
+    allPredDict = dict()
+    allYDict = dict()
+    curPred = []
+    curY=[]
+    pName = ""
+    for line in open(inF):
+        lineList = line.strip().split()
+        if len(lineList)<3:
+            #New pathway
+            if len(curPred)>0:
+                allPredDict[pName] = curPred
+                allYDict[pName] = curY
+            pName = line.strip().split("/")[-1]
+            pName = "_".join(pName.split("_")[1:])
+            curPred = []
+            curY = []
+        else:
+            i1 = lineList[0]
+            i2 = lineList[1]
+            pred = lineList[2]
+            edgeStr = i1+"_"+i2
+            y = allPathDF[pName][allPathDF[pName]['edgeStr']==edgeStr].iloc[0]["Location"]
+            curPred.append(locDict[pred])
+            curY.append(locDict[y])
+    yList = []
+    predList = []
+    for p in allYDict:
+        yList.append(allYDict[p])
+        predList.append(allPredDict[p])
+    metrics, mergedMetrics = getMetricLists(predList, yList)
+
+    num_inst = len(yList)
+    metrics['model'] = [mName]*num_inst
+
+    dataFList = inFile.split('-')
+    pathwaySet = dataFList[1]
+    features = dataFList[2][:-2] #get rid of '.p'
+    metrics['data'] = [pathwaySet]*num_inst
+    metrics['features'] = [features]*num_inst
+
+    mergedMetrics['model'] = [mName]
+    mergedMetrics['data'] = [pathwaySet]
+    mergedMetrics['features'] = [features]
+    return metrics, mergedMetrics
+
+def evalSKModel(inFile):
+    locList = ["cytosol","extracellular","membrane","nucleus","secretory-pathway","mitochondrion"]
+    locDict = {"cytosol":0,"extracellular":1,"membrane":2,"mitochondrion":5,"nucleus":3,"secretory-pathway":4}
+    colNames = ["Interactor1", "Edge Type", "Interactor2", "Location"]
+
+    resultsData = torch.load(inFile)
+    mName = resultsData['model']
+    preds = resultsData['predictions']
+    yAll = resultsData['y_all']
+    netInd = resultsData['network_index']
+
+    predList = []
+    yList = []
+    for net in netInd:
+        curY = yAll[netInd[net]]
+        curPred = preds[netInd[net]]
+        yList.append(curY)
+        predList.append(curPred)
+
+    metrics, mergedMetrics = getMetricLists(predList, yList)
+
+    num_inst = len(yList)
+    metrics['model'] = [mName]*num_inst
+
+    dataFList = inFile.split('-')
+    pathwaySet = dataFList[1]
+    features = dataFList[2][:-2] #get rid of '.p'
+    metrics['data'] = [pathwaySet]*num_inst
+    metrics['features'] = [features]*num_inst
+
+    mergedMetrics['model'] = [mName]
+    mergedMetrics['data'] = [pathwaySet]
+    mergedMetrics['features'] = [features]
+    return metrics, mergedMetrics
+
+def getOuts(loader, model):
      model.eval()
      correct = 0
      total = 0
      predList = []
      yList = []
      for data in loader:
-         data.to(device)
          out,e = model(data.x, data.edge_index, data.batch)
          pred = out.argmax(dim=1)  # Use the class with highest probability.
 
@@ -125,8 +217,13 @@ def getMetricLists(predList,yList):
     totalPred = None
     totalY = None
     for i in range(len(predList)):
-        pred = predList[i].numpy()
-        y = yList[i].numpy()
+        try:
+            #If this is a tensor convert it
+            pred = predList[i].numpy()
+            y = yList[i].numpy()
+        except AttributeError:
+            pred = predList[i]
+            y = yList[i]
         if totalPred is None:
             totalPred = pred
             totalY = y
@@ -168,7 +265,7 @@ def getEmbedding(loader, model):
             yAll = torch.cat((yAll,data.y), dim=0)
     return embeddingAll, yAll
 
-def evalModels(models, train_loaders, test_loaders,device, mName, parameters, resultsData, lr):
+def evalModels(models, train_loaders, test_loaders, mName, parameters, resultsData, lr):
     #optimizers = []
     losses = resultsData['losses']
     for i in range(len(train_loaders)):
@@ -180,7 +277,7 @@ def evalModels(models, train_loaders, test_loaders,device, mName, parameters, re
     yList = []
     predList = []
     for i in range(len(train_loaders)):
-        preds, ys = getOuts(test_loaders[i], models[i], device)
+        preds, ys = getOuts(test_loaders[i], models[i])
         predList += preds
         yList += ys
     return predList,yList
@@ -200,7 +297,15 @@ if __name__ == "__main__":
     perfs = dict()
     perfsMerged = dict()
     for f in fList:
-        metrics, mergedMetrics = evalCNNs(f)
+        print("Loading "+f+"...")
+        metrics = None
+        mergedMetrics = None
+        if f[:3]=="pgm":
+            metrics, mergedMetrics = evalPGM(f)
+        elif f[:3]=="sk_":
+            metrics, mergedMetrics = evalSKModel(f)
+        else:
+            metrics, mergedMetrics = evalCNNs(f)
         numInst = 0
         for m in metrics:
             if not m in perfs:
@@ -211,7 +316,6 @@ if __name__ == "__main__":
             numInst = len(metrics[m])
     metricDF = pd.DataFrame.from_dict(perfs)
     metricMergedDF = pd.DataFrame.from_dict(perfsMerged)
-
 
     for dataF in metricDF['data'].unique():
         sub_metricDF = metricDF[metricDF['data']==dataF]

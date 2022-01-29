@@ -1,15 +1,30 @@
-#Args are networks features model output oDir
-python prepPGMData.py $1 $2 $5
+#Args: networks features model output oDir
 
-for i in {0..4};
-do
-    pgm/train_nets ${5}/trainFold${i}.txt ${5}/testFold${i}.txt $2 5 3 $5/;
-done;
+mkdir ${5}
 
-rm ${4};
-for i in `ls ${5}/trainedModel*`; do echo $i >> ${4}; cat $i >> ${4}; done;
+mOut="${4}_raw";
+if [ "${3}" = "TrainedPGM" ];
+then
+    python prepPGMData.py $1 $2 $5;
 
-#grep -qxF ${1}.txt modelFiles.txt || echo ${1}.txt >> modelFiles.txt;
+    for i in {0..4};
+    do
+        pgm/train_nets ${5}/trainFold${i}.txt ${5}/testFold${i}.txt $2 5 3 ${5}/;
+    done;
 
-#python compareReactomeComPPI.py allPathsComplexes.txt ../../data/comPPI/comppi--proteins_locs--tax_hsapiens_loc_all.txt ../../data/comppi_uniprot_map.txt ../../data/comPPIGOMap.yml ../../data/reactomeLocalizations/goNameMap.tsv basicModelOutput.txt modelFiles.txt;
-#python compareReactomeComPPI.py allDevPaths.txt ../../data/comPPI/comppi--proteins_locs--tax_hsapiens_loc_all.txt ../../data/comppi_uniprot_map.txt ../../data/comPPIGOMap.yml ../../data/reactomeLocalizations/goNameMap.tsv basicModelOutput.txt modelFiles.txt;
+    rm ${mOut};
+    for i in `ls ${5}/trainedModel*`; do echo $i >> ${mOut}; cat $i >> ${mOut}; done;
+
+else
+    #There is no training on this model so we can just go
+    for i in `cat ${1}`;
+    do
+        pgm/no_training_model ${i} ${2} ${5}/;
+    done;
+
+    rm ${mOut};
+    for i in `ls ${5}/pgmDirectFeatures*`; do echo $i >> ${mOut}; cat $i >> ${mOut}; done;
+fi
+
+python parsePGMOutput.py ${mOut} ${4} ${3} ${1}
+

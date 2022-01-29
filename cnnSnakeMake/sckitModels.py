@@ -36,7 +36,7 @@ def load_scikit_data(networks_file, features_file):
         network_index[p] = np.zeros(len(y), dtype=bool)
         size = len(allPathDFs[p])
         network_index[p][cur_ind:cur_ind+size] = 1
-        cur_ind += size+1
+        cur_ind += size
 
     return x, y, pOrder, network_index
 
@@ -117,15 +117,20 @@ def eval_sklearn_model(networksFile, networksFile_val, featuresFile, model, outF
     #Peform final prediction
     perfs = []
     preds = []
+    y_all = []
     for train_ind, test_ind in kf.split(path_order):
         edge_index_train = np.zeros(len(y), dtype=bool)
+        edge_index_test = np.zeros(len(y), dtype=bool)
         for path in path_order[train_ind]:
             edge_index_train[network_index[path]]=1
-        X_train, X_test = X[edge_index_train], X[~edge_index_train]
-        y_train, y_test = y[edge_index_train], y[~edge_index_train]
+        for path in path_order[test_ind]:
+            edge_index_test[network_index[path]]=1
+        X_train, X_test = X[edge_index_train], X[edge_index_test]
+        y_train, y_test = y[edge_index_train], y[edge_index_test]
         clf.fit(X_train, y_train)
         out = clf.predict(X_test)
-        preds.append(out)
+        preds = np.concatenate((preds, out))
+        y_all = np.concatenate((y_all, y_test))
         scorer = get_scorer(metric)
         score = scorer._score_func(y_test, out)
         perfs.append(score)
@@ -133,6 +138,8 @@ def eval_sklearn_model(networksFile, networksFile_val, featuresFile, model, outF
     t_save({'metrics': perfs,
             'predictions': preds,
             'best_params': grid.best_params_,
+            'y_all': y_all,
+            'model': model,
             'network_index': network_index}
             ,outFile)
 
