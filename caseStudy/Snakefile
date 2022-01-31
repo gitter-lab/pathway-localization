@@ -1,0 +1,62 @@
+MODELS=['LinearNN','GATCONV','SimpleGCN','GIN2'] #Best performing model
+NETWORKS=['top100Paths']
+FEATURES=['compartmentsNodes','comPPINodes','mergedKeyWords_5']
+#TIMES = ['24hpi','48hpi','72hpi','96hpi','120hpi']
+TIMES = ['24hpi']
+#FEATURES=['comPPINodes']
+#FEATURES=['mergedKeyWords_5']
+FEATURES=['compartmentsNodes']
+MODELS=['GATCONV']
+
+rule make_pytorch_datasets:
+    input:
+        net="data/{networks}.txt",
+        feat="data/{features}.tsv"
+    output:
+        full="torchDatasets/{time}-{networks}-{features}.p"
+    params:
+        time = "data/tmtLocs{time}.csv"
+    shell:
+        "python prepCaseStudyData.py {input.net} {input.feat} {output.full} data/markerProteins.csv data/allUniprot.tsv all {params.time};"
+
+#It doesn't matter which timepoint we use to make the tuning dataset
+rule make_pytorch_val_datasets:
+    input:
+        netV="data/{networks}.txt_val",
+        feat="data/{features}.tsv"
+    output:
+        val="torchDatasets/{networks}-{features}.p_val"
+    shell:
+        "python prepCaseStudyData.py {input.netV} {input.feat} {output.val} data/markerProteins.csv data/allUniprot.tsv folds data/tmtLocs24hpi.csv"
+
+rule tune_pytorch_params:
+    input:
+        "torchDatasets/{networks}-{features}.p_val"
+    params:
+        curModel = "{model}"
+    output:
+        "axRuns/{model}-{networks}-{features}.json"
+    shell:
+        "python tuneCaseStudy.py {params.curModel} {input} {output}"
+
+rule pytorch_run:
+    input:
+        "axRuns/{model}-{networks}-{features}.json",
+        "torchDatasets/{time}-{networks}-{features}.p"
+    output:
+        "runs/{time}-{model}-{networks}-{features}.p"
+    shell:
+        "python trainCaseStudy.py {input} {output}"
+
+rule analyze_results:
+    input:
+        expand("runs/{time}-{model}-{networks}-{features}.p",time=TIMES, model=MODELS,networks=NETWORKS,features=FEATURES),
+    output:
+        "results/allRes.p"
+    shell:
+        "python combineAnalyzeRes.py {input}"
+
+rule all:
+    input:
+        "results/allRes.p"
+
