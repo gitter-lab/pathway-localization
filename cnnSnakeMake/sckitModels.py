@@ -14,7 +14,13 @@ np.random.seed(seed)
 
 def load_scikit_data(networks_file, features_file):
     allPathNets, allPathDFs, featuresDF, locList, locDict, pOrder = loc_data_to_tables(networks_file, features_file)
-    mergedDF = pd.concat(allPathDFs.values()).reset_index()
+    mergedDF = allPathDFs[pOrder[0]]
+    for i in range(1,len(pOrder)):
+        curPath = pOrder[i]
+        mergedDF = mergedDF.append(allPathDFs[curPath], ignore_index=True, sort=False)
+
+    #pd.concat(allPathDFs.values(), ignore_index=True)
+
     featuresDict = featuresDF.to_dict('index')
     featuresList = list(featuresDF.columns)
 
@@ -31,7 +37,7 @@ def load_scikit_data(networks_file, features_file):
     #Lets us grab X and y by network
     network_index = dict()
     cur_ind = 0
-    for p in allPathDFs:
+    for p in pOrder:
         net = allPathDFs[p]
         network_index[p] = np.zeros(len(y), dtype=bool)
         size = len(allPathDFs[p])

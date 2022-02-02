@@ -1,8 +1,9 @@
 MODELS=['LinearNN','GATCONV','SimpleGCN','GIN2'] #Best performing model
-NETWORKS=['top100Paths']
+NETWORKS=['topPathways']
 FEATURES=['compartmentsNodes','comPPINodes','mergedKeyWords_5']
 #TIMES = ['24hpi','48hpi','72hpi','96hpi','120hpi']
 TIMES = ['24hpi']
+TIMES = ['24','120']
 #FEATURES=['comPPINodes']
 #FEATURES=['mergedKeyWords_5']
 FEATURES=['compartmentsNodes']
@@ -10,14 +11,13 @@ MODELS=['GATCONV']
 
 rule make_pytorch_datasets:
     input:
-        net="data/{networks}.txt",
-        feat="data/{features}.tsv"
+        net="data/{networks}_{time}.txt",
+        feat="data/{features}.tsv",
+        timeData = "data/tmtLocs{time}hpi.csv"
     output:
         full="torchDatasets/{time}-{networks}-{features}.p"
-    params:
-        time = "data/tmtLocs{time}.csv"
     shell:
-        "python prepCaseStudyData.py {input.net} {input.feat} {output.full} data/markerProteins.csv data/allUniprot.tsv all {params.time};"
+        "python prepCaseStudyData.py {input.net} {input.feat} {output.full} data/markerProteins.csv data/allUniprot.tsv all {input.timeData};"
 
 #It doesn't matter which timepoint we use to make the tuning dataset
 rule make_pytorch_val_datasets:
@@ -27,7 +27,7 @@ rule make_pytorch_val_datasets:
     output:
         val="torchDatasets/{networks}-{features}.p_val"
     shell:
-        "python prepCaseStudyData.py {input.netV} {input.feat} {output.val} data/markerProteins.csv data/allUniprot.tsv folds data/tmtLocs24hpi.csv"
+        "python prepCaseStudyData.py {input.netV} {input.feat} {output.val} data/markerProteins.csv data/allUniprot.tsv folds data/tmtLocs48hpi.csv"
 
 rule tune_pytorch_params:
     input:
@@ -50,11 +50,12 @@ rule pytorch_run:
 
 rule analyze_results:
     input:
-        expand("runs/{time}-{model}-{networks}-{features}.p",time=TIMES, model=MODELS,networks=NETWORKS,features=FEATURES),
+        resFile = expand("runs/{time}-{model}-{networks}-{features}.p",time=TIMES, model=MODELS,networks=NETWORKS,features=FEATURES),
+        full=expand("torchDatasets/{time}-{networks}-{features}.p",time=TIMES,networks=NETWORKS,features=FEATURES)
     output:
         "results/allRes.p"
     shell:
-        "python combineAnalyzeRes.py {input}"
+        "python combineAnalyzeRes.py {input.resFile}"
 
 rule all:
     input:

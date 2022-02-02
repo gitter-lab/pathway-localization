@@ -83,8 +83,8 @@ def train(loader, model, optimizer, criterion,device):
     model.train()
     optimizer.zero_grad()  # Clear gradients.
     for data in loader:  # Iterate in batches over the training dataset.
-         if isinstance(data,list): #Black magic
-            data = data[0]
+         #if isinstance(data,list): #Black magic
+         #   data = data[0]
          data.to(device)
          out,e = model(data.x, data.edge_index, data.batch)  # Perform a single forward pass.
          loss = criterion(out[data.is_marker], data.y[data.is_marker])  # Compute the loss only where we have data
@@ -99,8 +99,8 @@ def testTraining(loader, model,device, validationRun, test=False):
      allY = None
      testInd = None
      for data in loader:  # Iterate in batches over the training/test dataset.
-         if isinstance(data,list): #Black magic
-            data = data[0]
+         #if isinstance(data,list): #Black magic
+         #   data = data[0]
          data.to(device)
          out,e = model(data.x, data.edge_index, data.batch)
          pred = out.argmax(dim=1)  # Use the class with highest probability.
@@ -131,8 +131,8 @@ def getEmbedding(loader, model):
     embeddingAll = None
     yAll = None
     for data in loader:  # Iterate in batches over the training/test dataset.
-         if isinstance(data,list): #Black magic
-            data = data[0]
+         #if isinstance(data,list): #Black magic
+         #   data = data[0]
          out,e = model(data.x, data.edge_index, data.batch)
          if (embeddingAll == None):
             embeddingAll = e
@@ -155,7 +155,7 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
 
     #Right now we only do early stopping in validation runs
     #We would need to bring the validation set to the final run
-    patience = 100
+    patience = 50
     bestAcc = 0.0
     bestEpoch = 0
 
@@ -186,7 +186,7 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
         for i in range(len(train_loaders)):
             models[i].load_state_dict(model_states[i])
             optimizers[i].load_state_dict(optimizer_states[i])
-        start_epoch = 0
+        start_epoch = 295#checkpoint['epoch']
 
     #Start training
     test_acc_batch_list = []
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     best_parameters, values = ax_client.get_best_parameters()
     best_parameters['dataFile'] = inData
     best_parameters['outputFile'] = outF
-    best_parameters['epochs'] = 1000
+    best_parameters['epochs'] = 300
     best_parameters['validationRun'] = False
     print(best_parameters)
     testCNNs(best_parameters)

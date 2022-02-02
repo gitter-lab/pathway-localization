@@ -3,10 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import networkx as nx
+from sklearn.metrics import balanced_accuracy_score
 
 def getLocData(networksFile, featuresFile):
     #Load in the reactome networks as a dictionary of dataFrames
-    sns.set_theme(style="darkgrid")
     #We will not add pathways with fewer nodes than this
     MIN_NETWORK_SIZE_THRESHOLD = 4
 
@@ -62,17 +62,27 @@ def getLocData(networksFile, featuresFile):
     meltedDF = meltedDF.dropna()
     meltedDF['Match'] = meltedDF['Location']==meltedDF['comPPI']
     sns.boxplot(data=meltedDF, x='Location',y='Probability',hue='comPPI',hue_order=locList,order=locList)
+    plt.xlabel('Reactome Location')
+    plt.ylabel('Compartments Score')
     plt.show()
 
     #Get maxes
     #print(allDataDF[["Location"]])
-    allDataDF['Loc_Max'] = allDataDF[fList].idxmax(axis=1).str[:-2]
-    sns.catplot(data=allDataDF, kind='count', x="Location", row='Loc_Max',order=locList)
-    plt.show()
+    #multMaxF = []
+    #for l in locList:
+    #    multMaxF.append(l+"_comb")
+    #    allDataDF[l+"_comb"] = allDataDF[l+"_1"]*allDataDF[l+"_2"]
+    allDataDF['Loc_Max'] = allDataDF[fList].idxmax(axis=1).str[:-5]
+    #ogN = len(allDataDF)
+    #allDataDF = allDataDF.dropna(subset=["Loc_Max"])
+    #newN = len(allDataDF)
+    #print(balanced_accuracy_score(allDataDF["Location"],allDataDF["Loc_Max"]))
+    #print(float(newN)/ogN)
+    #sns.catplot(data=allDataDF, kind='count', x="Location", row='Loc_Max',order=locList)
+    #plt.show()
 
     #Calculate theoretical max base classification performance
     #print(meltedDF)
-    return
 
     #FeatureHistograms
     #g = sns.PairGrid(featuresDF)
@@ -80,6 +90,7 @@ def getLocData(networksFile, featuresFile):
     #g.map_offdiag(sns.scatterplot)
     #plt.show()
 
+    return
     #Make a uniform attribute row for misses
     uniform = dict()
     for feat in featuresDF.columns:
@@ -149,7 +160,21 @@ def makeOutD(locList,fD,i1,suff,miss=False):
 
 if __name__ == "__main__":
     #networksFile = 'allDevReactomePathsCom.txt'
-    networksFile = 'data/allPathBank.txt'
+    #networksFile = 'data/allPathBank.txt'
+    networksFile = 'data/allReactomePaths.txt'
+    #featuresFile = 'data/comPPINodes.tsv'
     featuresFile = 'data/compartmentsNodes.tsv'
     #featuresFile = '../data/uniprotKeywords/mergedKeyWords_5.tsv'
+
+    sns.set_theme(style="white", context='paper')
+    sns.set(font_scale=1.4)
+    sns.set_palette('crest')
+    plt.rcParams["font.weight"] = "bold"
+    plt.rcParams["axes.labelweight"] = "bold"
+
+    # Say, "the default sans-serif font is COMIC SANS"
+    plt.rcParams['font.sans-serif'] = "Oswald"
+    # Then, "ALWAYS use sans-serif fonts"
+    plt.rcParams['font.family'] = "sans-serif"
+
     getLocData(networksFile, featuresFile)

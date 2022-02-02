@@ -30,6 +30,8 @@ np.random.seed(seed) #TODO numpy now reccomends using generators to create rando
 def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_map_file, all_folds, pred_data):
     allPathNets, allPathDFs, featuresDF, locDict, pOrder = pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_file, pred_data, all_folds)
 
+
+
     #So I'll want a graph object for each pathway as a networkx graph
     dataList = []
     nameMap = dict()
@@ -39,6 +41,7 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
         graphData['y'] = graphData.edge_attr[:,0].long()
         graphData['is_marker'] = graphData.edge_attr[:,1].gt(0)
         graphData['is_pred'] = graphData.edge_attr[:,2].gt(0)
+        graphData['name'] = p
         graphData.num_classes = len(locDict)
         dataList.append(graphData)
 
@@ -55,8 +58,9 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
     if all_folds=="all":
         trains = []
         tests = []
-        trains.append(dataList)
-        tests.append(dataList)
+        for i in range(len(dataList)):
+            trains.append(dataList[i])
+            tests.append(dataList[i])
         train_sets.append(trains)
         test_sets.append(tests)
 
@@ -135,11 +139,16 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
         locs = []
         isMarker = []
         isPred = []
+        eNameInd = []
+        eNameNames = []
         pathDF = allPathDFs[p]
         for index,row in pathDF.iterrows():
             loc = ""
             i1 = row["Interactor1"]
             i2 = row["Interactor2"]
+            eName = "_".join(sorted([i1,i2]))
+            eNameNames.append(eName)
+            eNameInd.append(len(eNameNames)-1)
             if (i1 in markerDict) and (i2 in markerDict):
                 loc1 = markerDict[i1]
                 loc2 = markerDict[i2]
@@ -185,8 +194,9 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
         pathDF["loc_feat"] = pathDF['Location'].map(locDict)
         pathDF['is_marker'] = isMarker
         pathDF['is_pred'] = isPred
+        pathDF['e_name'] = eNameNames
         allPathNets[p] = nx.from_pandas_edgelist(pathDF, source='Interactor1',
-                                                 target='Interactor2', edge_attr= ['Location','loc_feat','is_marker','is_pred'])
+                                                 target='Interactor2', edge_attr= ['Location','e_name','loc_feat','is_marker','is_pred'])
 
     print("Loaded in %d pathways with %f percent misses and %d predictions" %(len(allPathDFs), 100*float(misses)/totalE, totalPred))
 

@@ -45,7 +45,6 @@ def evalCNNs(inFile):
     test_loaders = dataState['test_loaders']
     dataList = dataState['dataList']
 
-    ### CV Models (Just plots the average for now)
     if mName == 'LinearNN':
         models = []
         for i in range(len(train_loaders)):
@@ -62,11 +61,6 @@ def evalCNNs(inFile):
         models = []
         for i in range(len(train_loaders)):
             models.append(GATCONV(dataList[0],parameterization))
-
-    elif mName == 'PANCONV':
-        models = []
-        for i in range(len(train_loaders)):
-            models.append(PANCONV(dataList[0],parameterization))
 
     elif mName == 'GIN2':
         models = []
@@ -170,6 +164,8 @@ def evalSKModel(inFile):
         curY = yAll[netInd[net]]
         curPred = preds[netInd[net]]
         yList.append(curY)
+        if len(np.unique(curY))==6:
+            print(net)
         predList.append(curPred)
 
     metrics, mergedMetrics = getMetricLists(predList, yList)
@@ -214,6 +210,8 @@ def getMetricLists(predList,yList):
     f1List = []
     baccList = []
     sizeList = []
+    locCount = []
+    predCount = []
     totalPred = None
     totalY = None
     for i in range(len(predList)):
@@ -241,13 +239,17 @@ def getMetricLists(predList,yList):
             accList.append(acc)
             baccList.append(bacc)
             sizeList.append(len(y))
+            locCount.append(len(np.unique(y)))
+            predCount.append(len(np.unique(pred)))
 
-    netOut = {'mcc':mccList, 'f1':f1List, 'acc':accList, 'bal_acc':baccList, 'p_size':sizeList}
+    netOut = {'mcc':mccList, 'f1':f1List, 'acc':accList, 'bal_acc':baccList, 'p_size':sizeList, 'Unique Localizations': locCount, 'Predicted Unique Localizations':predCount}
     allOut = {'mcc':[matthews_corrcoef(totalY, totalPred)],
               'f1':[f1_score(totalY, totalPred, average='micro')],
               'acc':[accuracy_score(totalY, totalPred)],
               'bal_acc':[balanced_accuracy_score(totalY, totalPred)],
-              'p_size':[len(totalY)]}
+              'p_size':[len(totalY)],
+              'Unique Localizations':[len(np.unique(totalY))],
+              'Predicted Unique Localizations':[len(np.unique(totalPred))]}
     return netOut, allOut
 
 
@@ -282,14 +284,6 @@ def evalModels(models, train_loaders, test_loaders, mName, parameters, resultsDa
         yList += ys
     return predList,yList
 
-def plotMetric(metricDF, metric_name, x_val = None, hue=None, title=None, ax=None):
-    if "Merged" in title:
-        sns.barplot(x=x_val,y=metric_name, hue=hue, data=metricDF, ax=ax)
-    else:
-        sns.boxplot(x=x_val,y=metric_name, hue=hue, data=metricDF, ax=ax)
-    plt.title(title)
-    plt.show()
-
 if __name__ == "__main__":
     fList = []
     for f in argv[1:]:
@@ -317,15 +311,7 @@ if __name__ == "__main__":
     metricDF = pd.DataFrame.from_dict(perfs)
     metricMergedDF = pd.DataFrame.from_dict(perfsMerged)
 
-    for dataF in metricDF['data'].unique():
-        sub_metricDF = metricDF[metricDF['data']==dataF]
-        sub_metricMergedDF = metricMergedDF[metricMergedDF['data']==dataF]
-        plotMetric(sub_metricMergedDF, 'bal_acc', x_val='model', hue='features',title="Merged"+dataF)
-        plotMetric(sub_metricDF, 'acc', x_val='model', hue='features',title=dataF)
-        plotMetric(sub_metricDF, 'bal_acc', x_val='model', hue='features',title=dataF)
-        plotMetric(sub_metricDF, 'f1', x_val='model', hue='features',title=dataF)
-        plotMetric(sub_metricDF, 'mcc', x_val='model', hue='features',title=dataF)
-    torch.save({'metrics':metricDF},'results/allRes.p')
+    torch.save({'metrics':metricDF, 'mergedMetrics':metricMergedDF},'results/allRes.p')
 
 
 
