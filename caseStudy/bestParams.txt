@@ -1,0 +1,3 @@
+{'lRate': 0.0016728739416186432, 'l_depth': 2, 'dropout': 0.0, 'dim': 33, 'c_depth': 3, 'num_heads': 3, 'epochs': 1000, 'dataFile': 'torchDatasets/120-topPathways-compartmentsNodes.p', 'mName': 'GATCONV', 'outputFile': 'runs/120-GATCONV-topPathways-compartmentsNodes.p', 'validationRun': False}
+{'lRate': 0.0016728739416186432, 'l_depth': 2, 'dropout': 0.0, 'dim': 33, 'c_depth': 3, 'num_heads': 3, 'epochs': 1000, 'dataFile': 'torchDatasets/24-topPathways-compartmentsNodes.p', 'mName': 'GATCONV', 'outputFile': 'runs/24-GATCONV-topPathways-compartmentsNodes.p', 'validationRun': False}
+

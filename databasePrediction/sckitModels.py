@@ -27,9 +27,12 @@ def load_scikit_data(networks_file, features_file):
     appliedDF = mergedDF[['Interactor1','Interactor2']].apply(lambda x: getFeatColumns(featuresDict, featuresList, *x), axis=1, result_type='expand')
     mergedDF = pd.concat([mergedDF, appliedDF], axis='columns')
     fList = []
+    prodFList = []
     for l in featuresList:
         fList.append(l+"_1")
         fList.append(l+"_2")
+        mergedDF[l+"_prod"] = mergedDF[l+"_1"]*mergedDF[l+"_2"]
+        prodFList.append(l+"_prod")
 
     y = mergedDF['Location']
     x = mergedDF[fList]
@@ -124,6 +127,7 @@ def eval_sklearn_model(networksFile, networksFile_val, featuresFile, model, outF
     perfs = []
     preds = []
     y_all = []
+    x_all = None
     for train_ind, test_ind in kf.split(path_order):
         edge_index_train = np.zeros(len(y), dtype=bool)
         edge_index_test = np.zeros(len(y), dtype=bool)
@@ -137,6 +141,10 @@ def eval_sklearn_model(networksFile, networksFile_val, featuresFile, model, outF
         out = clf.predict(X_test)
         preds = np.concatenate((preds, out))
         y_all = np.concatenate((y_all, y_test))
+        if x_all is None:
+            x_all = X_test
+        else:
+            x_all = np.concatenate((x_all, X_test))
         scorer = get_scorer(metric)
         score = scorer._score_func(y_test, out)
         perfs.append(score)
@@ -145,6 +153,7 @@ def eval_sklearn_model(networksFile, networksFile_val, featuresFile, model, outF
             'predictions': preds,
             'best_params': grid.best_params_,
             'y_all': y_all,
+            'x_all': x_all,
             'model': model,
             'network_index': network_index}
             ,outFile)

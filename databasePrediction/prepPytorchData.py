@@ -102,8 +102,6 @@ def loc_data_to_tables(networks_file, features_file):
 
     #Load in all comPPI Data as a dataframe too
     featuresDF = pd.read_csv(features_file, sep="\t", index_col="uniprot")
-    featuresDF = featuresDF.where(featuresDF > EVIDENCE_THRESHOLD_LOWER, 0)
-    featuresDF = featuresDF.where(featuresDF < EVIDENCE_THRESHOLD_UPPER, 0)
     featuresDict = featuresDF.to_dict('index')
 
     #Make a uniform attribute row for misses
