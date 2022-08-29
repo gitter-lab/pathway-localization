@@ -1,3 +1,0 @@
-/home/chris/research/pathwayLocalization/scripts/exploratoryScripts/dgm/netTest/CMakeFiles/rebuild_cache.dir
-/home/chris/research/pathwayLocalization/scripts/exploratoryScripts/dgm/netTest/CMakeFiles/test_net.dir
-/home/chris/research/pathwayLocalization/scripts/exploratoryScripts/dgm/netTest/CMakeFiles/edit_cache.dir
