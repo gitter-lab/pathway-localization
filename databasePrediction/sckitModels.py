@@ -12,15 +12,14 @@ from torch import save as t_save
 seed = 24
 np.random.seed(seed)
 
+#Loads all data and places it into a format for use
+#by scikit learn
 def load_scikit_data(networks_file, features_file):
     allPathNets, allPathDFs, featuresDF, locList, locDict, pOrder = loc_data_to_tables(networks_file, features_file)
     mergedDF = allPathDFs[pOrder[0]]
     for i in range(1,len(pOrder)):
         curPath = pOrder[i]
         mergedDF = mergedDF.append(allPathDFs[curPath], ignore_index=True, sort=False)
-
-    #pd.concat(allPathDFs.values(), ignore_index=True)
-
     featuresDict = featuresDF.to_dict('index')
     featuresList = list(featuresDF.columns)
 
@@ -46,12 +45,13 @@ def load_scikit_data(networks_file, features_file):
         size = len(allPathDFs[p])
         network_index[p][cur_ind:cur_ind+size] = 1
         cur_ind += size
-
     return x, y, pOrder, network_index
 
 def fit_grid_search():
     return best_params
 
+#This method creates edge features by combining node-level
+#features for each edge
 def getFeatColumns(fD,locList,i1,i2):
     outDict=dict()
     if i1 in fD and i2 in fD:
@@ -89,6 +89,7 @@ def makeOutD(locList,fD,i1,suff,miss=False):
 
 def eval_sklearn_model(networksFile, networksFile_val, featuresFile, model, outFile):
     X, y, path_order, network_index = load_scikit_data(networksFile, featuresFile)
+    #_val datasets are validation datasets used for tuning
     X_val, y_val, path_order_val, network_index_val = load_scikit_data(networksFile_val, featuresFile)
     metric = 'balanced_accuracy'
     path_order = np.asarray(path_order)
@@ -166,5 +167,4 @@ if __name__ == "__main__":
     featuresFile = argv[3]
     model = argv[4]
     outFile = argv[5]
-
     eval_sklearn_model(networksFile, networksFile_val, featuresFile, model, outFile)

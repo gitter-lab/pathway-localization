@@ -37,6 +37,7 @@ if __name__ == "__main__":
 
     ax_client = AxClient()
 
+    #This is where the NN parameters are all defined
     parameters=[
         {"name": "lRate", "type": "range", "bounds": [1e-5, 0.01], "log_scale": True},
         {"name": "l_depth", "type": "range", "value_type": "int", "bounds": [1, 5]},

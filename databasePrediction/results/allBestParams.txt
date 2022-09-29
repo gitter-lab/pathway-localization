@@ -1,0 +1,330 @@
+Loading runs/LinearNN-allReactomePaths-comPPINodes.p...
+lRate & 0.0022130042050385835
+l_depth & 2
+dropout & 0.5
+dim & 83
+activation & tanh
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-comPPINodes.p
+mName & LinearNN
+validationRun & False
+outputFile & runs/LinearNN-allReactomePaths-comPPINodes.p
+Loading runs/LinearNN-allReactomePaths-compartmentsNodes.p...
+lRate & 0.008307641356558246
+l_depth & 1
+dropout & 0.5
+dim & 82
+activation & tanh
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-compartmentsNodes.p
+mName & LinearNN
+validationRun & False
+outputFile & runs/LinearNN-allReactomePaths-compartmentsNodes.p
+Loading runs/LinearNN-allReactomePaths-mergedKeyWords_5.p...
+lRate & 0.000837677998208438
+l_depth & 3
+dropout & 0.5
+dim & 98
+activation & relu
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-mergedKeyWords_5.p
+mName & LinearNN
+validationRun & False
+outputFile & runs/LinearNN-allReactomePaths-mergedKeyWords_5.p
+Loading runs/LinearNN-allPathBank-comPPINodes.p...
+lRate & 0.01
+l_depth & 1
+dropout & 0.0
+dim & 41
+activation & tanh
+epochs & 2000
+dataFile & torchDatasets/allPathBank-comPPINodes.p
+mName & LinearNN
+validationRun & False
+outputFile & runs/LinearNN-allPathBank-comPPINodes.p
+Loading runs/LinearNN-allPathBank-compartmentsNodes.p...
+lRate & 0.009467513571755957
+l_depth & 2
+dropout & 0.0
+dim & 103
+activation & relu
+epochs & 2000
+dataFile & torchDatasets/allPathBank-compartmentsNodes.p
+mName & LinearNN
+validationRun & False
+outputFile & runs/LinearNN-allPathBank-compartmentsNodes.p
+Loading runs/LinearNN-allPathBank-mergedKeyWords_5.p...
+lRate & 0.006123599734363459
+l_depth & 5
+dropout & 0.5
+dim & 81
+activation & tanh
+epochs & 2000
+dataFile & torchDatasets/allPathBank-mergedKeyWords_5.p
+mName & LinearNN
+validationRun & False
+outputFile & runs/LinearNN-allPathBank-mergedKeyWords_5.p
+Loading runs/SimpleGCN-allReactomePaths-comPPINodes.p...
+lRate & 0.0038194799465966567
+l_depth & 1
+dropout & 0.0
+dim & 81
+c_depth & 6
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-comPPINodes.p
+mName & SimpleGCN
+validationRun & False
+outputFile & runs/SimpleGCN-allReactomePaths-comPPINodes.p
+Loading runs/SimpleGCN-allReactomePaths-compartmentsNodes.p...
+lRate & 0.00014803094886516497
+l_depth & 1
+dropout & 0.5
+dim & 108
+c_depth & 2
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-compartmentsNodes.p
+mName & SimpleGCN
+validationRun & False
+outputFile & runs/SimpleGCN-allReactomePaths-compartmentsNodes.p
+Loading runs/SimpleGCN-allReactomePaths-mergedKeyWords_5.p...
+lRate & 0.0027142454235195455
+l_depth & 4
+dropout & 0.0
+dim & 87
+c_depth & 3
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-mergedKeyWords_5.p
+mName & SimpleGCN
+validationRun & False
+outputFile & runs/SimpleGCN-allReactomePaths-mergedKeyWords_5.p
+Loading runs/SimpleGCN-allPathBank-comPPINodes.p...
+lRate & 0.002143836002883139
+l_depth & 1
+dropout & 0.0
+dim & 44
+c_depth & 8
+epochs & 2000
+dataFile & torchDatasets/allPathBank-comPPINodes.p
+mName & SimpleGCN
+validationRun & False
+outputFile & runs/SimpleGCN-allPathBank-comPPINodes.p
+Loading runs/SimpleGCN-allPathBank-compartmentsNodes.p...
+lRate & 0.006169304418742717
+l_depth & 2
+dropout & 0.0
+dim & 96
+c_depth & 1
+epochs & 2000
+dataFile & torchDatasets/allPathBank-compartmentsNodes.p
+mName & SimpleGCN
+validationRun & False
+outputFile & runs/SimpleGCN-allPathBank-compartmentsNodes.p
+Loading runs/SimpleGCN-allPathBank-mergedKeyWords_5.p...
+lRate & 0.0025297487302130264
+l_depth & 3
+dropout & 0.0
+dim & 108
+c_depth & 5
+epochs & 2000
+dataFile & torchDatasets/allPathBank-mergedKeyWords_5.p
+mName & SimpleGCN
+validationRun & False
+outputFile & runs/SimpleGCN-allPathBank-mergedKeyWords_5.p
+Loading runs/GATCONV-allReactomePaths-comPPINodes.p...
+lRate & 0.002789220636105817
+l_depth & 2
+dropout & 0.0
+dim & 48
+c_depth & 7
+num_heads & 4
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-comPPINodes.p
+mName & GATCONV
+validationRun & False
+outputFile & runs/GATCONV-allReactomePaths-comPPINodes.p
+Loading runs/GATCONV-allReactomePaths-compartmentsNodes.p...
+lRate & 0.0002782880019552929
+l_depth & 4
+dropout & 0.5
+dim & 46
+c_depth & 1
+num_heads & 5
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-compartmentsNodes.p
+mName & GATCONV
+validationRun & False
+outputFile & runs/GATCONV-allReactomePaths-compartmentsNodes.p
+Loading runs/GATCONV-allReactomePaths-mergedKeyWords_5.p...
+lRate & 0.009725306283213784
+l_depth & 2
+dropout & 0.0
+dim & 31
+c_depth & 4
+num_heads & 1
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-mergedKeyWords_5.p
+mName & GATCONV
+validationRun & False
+outputFile & runs/GATCONV-allReactomePaths-mergedKeyWords_5.p
+Loading runs/GATCONV-allPathBank-comPPINodes.p...
+lRate & 0.0034676900948582387
+l_depth & 4
+dropout & 0.5
+dim & 45
+c_depth & 4
+num_heads & 3
+epochs & 2000
+dataFile & torchDatasets/allPathBank-comPPINodes.p
+mName & GATCONV
+validationRun & False
+outputFile & runs/GATCONV-allPathBank-comPPINodes.p
+Loading runs/GATCONV-allPathBank-compartmentsNodes.p...
+lRate & 0.0020241992669489456
+l_depth & 3
+dropout & 0.5
+dim & 43
+c_depth & 3
+num_heads & 4
+epochs & 2000
+dataFile & torchDatasets/allPathBank-compartmentsNodes.p
+mName & GATCONV
+validationRun & False
+outputFile & runs/GATCONV-allPathBank-compartmentsNodes.p
+Loading runs/GATCONV-allPathBank-mergedKeyWords_5.p...
+lRate & 0.0036053595509129327
+l_depth & 1
+dropout & 0.0
+dim & 39
+c_depth & 2
+num_heads & 4
+epochs & 2000
+dataFile & torchDatasets/allPathBank-mergedKeyWords_5.p
+mName & GATCONV
+validationRun & False
+outputFile & runs/GATCONV-allPathBank-mergedKeyWords_5.p
+Loading runs/GIN2-allReactomePaths-comPPINodes.p...
+lRate & 0.005141897734667702
+l_depth & 2
+dropout & 0.0
+dim & 95
+c_depth & 3
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-comPPINodes.p
+mName & GIN2
+validationRun & False
+outputFile & runs/GIN2-allReactomePaths-comPPINodes.p
+Loading runs/GIN2-allReactomePaths-compartmentsNodes.p...
+lRate & 0.0009774311818214257
+l_depth & 4
+dropout & 0.5
+dim & 24
+c_depth & 1
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-compartmentsNodes.p
+mName & GIN2
+validationRun & False
+outputFile & runs/GIN2-allReactomePaths-compartmentsNodes.p
+Loading runs/GIN2-allReactomePaths-mergedKeyWords_5.p...
+lRate & 0.0012791041729765336
+l_depth & 3
+dropout & 0.5
+dim & 60
+c_depth & 2
+epochs & 2000
+dataFile & torchDatasets/allReactomePaths-mergedKeyWords_5.p
+mName & GIN2
+validationRun & False
+outputFile & runs/GIN2-allReactomePaths-mergedKeyWords_5.p
+Loading runs/GIN2-allPathBank-comPPINodes.p...
+lRate & 0.002209533536233174
+l_depth & 4
+dropout & 0.0
+dim & 68
+c_depth & 1
+epochs & 2000
+dataFile & torchDatasets/allPathBank-comPPINodes.p
+mName & GIN2
+validationRun & False
+outputFile & runs/GIN2-allPathBank-comPPINodes.p
+Loading runs/GIN2-allPathBank-compartmentsNodes.p...
+lRate & 0.0011157650329445539
+l_depth & 3
+dropout & 0.5
+dim & 102
+c_depth & 3
+epochs & 2000
+dataFile & torchDatasets/allPathBank-compartmentsNodes.p
+mName & GIN2
+validationRun & False
+outputFile & runs/GIN2-allPathBank-compartmentsNodes.p
+Loading runs/GIN2-allPathBank-mergedKeyWords_5.p...
+lRate & 0.0009864187908697108
+l_depth & 2
+dropout & 0.0
+dim & 80
+c_depth & 1
+epochs & 2000
+dataFile & torchDatasets/allPathBank-mergedKeyWords_5.p
+mName & GIN2
+validationRun & False
+outputFile & runs/GIN2-allPathBank-mergedKeyWords_5.p
+Loading sk_runs/sk_logit-allReactomePaths-comPPINodes.p...
+C & 0.6201706303556345
+class_weight & balanced
+penalty & l2
+tol & 1e-06
+Loading sk_runs/sk_logit-allReactomePaths-compartmentsNodes.p...
+C & 91.89304028775767
+class_weight & balanced
+penalty & l2
+tol & 0.06204562785449241
+Loading sk_runs/sk_logit-allReactomePaths-mergedKeyWords_5.p...
+C & 7.604402630570986
+class_weight & balanced
+penalty & l2
+tol & 0.07828034344706161
+Loading sk_runs/sk_logit-allPathBank-comPPINodes.p...
+C & 0.04360395555862945
+class_weight & balanced
+penalty & l2
+tol & 1.8380133301273713e-05
+Loading sk_runs/sk_logit-allPathBank-compartmentsNodes.p...
+C & 0.4509507657767441
+class_weight & balanced
+penalty & l2
+tol & 4.713162197275013e-06
+Loading sk_runs/sk_logit-allPathBank-mergedKeyWords_5.p...
+C & 33.17621690790836
+class_weight & balanced
+penalty & l2
+tol & 0.032573937599348866
+Loading sk_runs/sk_rf-allReactomePaths-comPPINodes.p...
+class_weight & balanced
+max_depth & 3
+min_samples_split & 2
+n_estimators & 76
+Loading sk_runs/sk_rf-allReactomePaths-compartmentsNodes.p...
+class_weight & balanced
+max_depth & 9
+min_samples_split & 3
+n_estimators & 81
+Loading sk_runs/sk_rf-allReactomePaths-mergedKeyWords_5.p...
+class_weight & balanced
+max_depth & 6
+min_samples_split & 3
+n_estimators & 100
+Loading sk_runs/sk_rf-allPathBank-comPPINodes.p...
+class_weight & balanced
+max_depth & 10
+min_samples_split & 10
+n_estimators & 72
+Loading sk_runs/sk_rf-allPathBank-compartmentsNodes.p...
+class_weight & balanced
+max_depth & 10
+min_samples_split & 10
+n_estimators & 92
+Loading sk_runs/sk_rf-allPathBank-mergedKeyWords_5.p...
+class_weight & balanced
+max_depth & 10
+min_samples_split & 10
+n_estimators & 58

@@ -79,8 +79,6 @@ def loc_data_to_tables(networks_file, features_file):
 
     #We will not add pathways with fewer nodes than this
     MIN_NETWORK_SIZE_THRESHOLD = 4
-    EVIDENCE_THRESHOLD_LOWER = 0.0
-    EVIDENCE_THRESHOLD_UPPER = 9999
 
     allPathDFs = dict()
     allPathNets = dict()
@@ -129,11 +127,6 @@ if __name__ == "__main__":
     networks_file = argv[1]
     features_file = argv[2]
     outFile = argv[3]
-
-    #networks_file = 'allDevReactomePathsCom.txt'
-    #networks_file = 'allDevReactomePaths.txt'
-    #features_file = '../scripts/exploratoryScripts/comPPINodes.tsv'
-    #features_file = '../data/uniprotKeywords/mergedKeyWords_5.tsv'
     getCNNData(networks_file, features_file, outFile)
 
 

@@ -20,8 +20,10 @@ rule pgm_runs:
     shell:
         "bash runPGM.sh {input.net} {input.feat} {params.curModel} {output.full} {params.oDir};"
 
-#Right now the entire sklearn workflow takes <5 minutes to run, 
+#The entire sklearn workflow takes <5 minutes to run, 
 #so it feels like wasted effort to break this into multiple rules 
+#
+# Note: _val stands for validation and are generally random 10% subsets of the total dataset. 
 rule sklearn_runs:
     input:
         net="data/{networks}.txt",
@@ -34,6 +36,7 @@ rule sklearn_runs:
     shell:
         "python sckitModels.py {input.net} {input.netV} {input.feat} {params.curModel} {output};"
 
+#Take in network files, features, and ground-truth labels to create pytorch data objects. 
 rule make_pytorch_datasets:
     input:
         net="data/{networks}.txt",
@@ -46,6 +49,7 @@ rule make_pytorch_datasets:
         "python prepPytorchData.py {input.net} {input.feat} {output.full};"
         "python prepPytorchData.py {input.netV} {input.feat} {output.val}"
 
+#Perform parameter tuning using bayesian optimization
 rule tune_pytorch_params:
     input:
         "torchDatasets/{networks}-{features}.p_val"
@@ -56,6 +60,7 @@ rule tune_pytorch_params:
     shell:
         "python localizationTuningAx.py {params.curModel} {input} {output}"
 
+#Perform pytorch run using best-performing parameters
 rule pytorch_run:
     input:
         "axRuns/{model}-{networks}-{features}.json",
@@ -65,6 +70,7 @@ rule pytorch_run:
     shell:
         "python localizationPyTorchGeo.py {input} {output}"
 
+#Combine results from different sources to produce a dictionary of metrics. 
 rule analyze_results:
     input:
         expand("runs/{model}-{networks}-{features}.p", model=MODELS,networks=NETWORKS,features=FEATURES),
@@ -76,6 +82,7 @@ rule analyze_results:
     shell:
         "python combineAnalyzeRes.py {input}"
 
+#Finally, create plots. 
 rule all:
     input:
         res="results/allRes.p"

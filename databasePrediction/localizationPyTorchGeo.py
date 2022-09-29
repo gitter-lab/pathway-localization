@@ -137,7 +137,7 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
     if not validationRun:
         print_interval = 10
 
-    #Right now we only do early stopping in validation runs
+    #Right now we only do early stopping in tuning runs
     #We would need to bring the validation set to the final run
     patience = 100
     bestAcc = 0.0
