@@ -10,7 +10,7 @@ TBD
 
 First, extract the file in allRes.tar into the results directory:
 
-`tar -xvzf allRes.tar -C results/`
+`tar -xvzf allRes.tar`
 
 Then run:
 
