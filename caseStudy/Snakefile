@@ -1,11 +1,8 @@
-MODELS=['LinearNN','GATCONV','SimpleGCN','GIN2'] #Best performing model
+# This Snakefile is based on the Snakefile in databasePrediction. 
+# It assumes tuning has already been performed, since it bases all models on the best-performing model from that experiment. 
+
 NETWORKS=['topPathways']
-FEATURES=['compartmentsNodes','comPPINodes','mergedKeyWords_5']
-#TIMES = ['24hpi','48hpi','72hpi','96hpi','120hpi']
-TIMES = ['24hpi']
-TIMES = ['24','120']
-#FEATURES=['comPPINodes']
-#FEATURES=['mergedKeyWords_5']
+TIMES = ['same','egf120','120']
 FEATURES=['compartmentsNodes']
 MODELS=['GATCONV']
 
@@ -17,7 +14,7 @@ rule make_pytorch_datasets:
     output:
         full="torchDatasets/{time}-{networks}-{features}.p"
     shell:
-        "python prepCaseStudyData.py {input.net} {input.feat} {output.full} data/markerProteins.csv data/allUniprot.tsv all {input.timeData};"
+        "python prepCaseStudyData.py {input.net} {input.feat} {output.full} data/markerProteins.csv data/allUniprot.tsv half {input.timeData};"
 
 #It doesn't matter which timepoint we use to make the tuning dataset
 rule make_pytorch_val_datasets:
@@ -29,6 +26,8 @@ rule make_pytorch_val_datasets:
     shell:
         "python prepCaseStudyData.py {input.netV} {input.feat} {output.val} data/markerProteins.csv data/allUniprot.tsv folds data/tmtLocs48hpi.csv"
 
+
+#Note: For the case study this rule does not actually run, since we're using the tuning results from the main experiment
 rule tune_pytorch_params:
     input:
         "torchDatasets/{networks}-{features}.p_val"

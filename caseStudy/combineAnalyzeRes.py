@@ -13,6 +13,7 @@ from torch_geometric.nn import GCNConv, GINConv, GATv2Conv
 import random
 import math
 from sklearn.model_selection import KFold
+from sklearn.dummy import DummyClassifier
 from models import *
 from sys import argv
 import pickle as pkl
@@ -44,6 +45,7 @@ def evalCNNs(inFile):
     train_loaders = dataState['train_loaders']
     test_loaders = dataState['test_loaders']
     dataList = dataState['dataList']
+
 
     ### CV Models (Just plots the average for now)
     if mName == 'LinearNN':
@@ -90,7 +92,24 @@ def evalCNNs(inFile):
     mergedMetrics['Timepoint'] = [pathwaySet]
     mergedMetrics['features'] = [features]
 
-    return metrics,mergedMetrics,namedDF
+    #Add dummy classifier
+    dummy_clf = DummyClassifier(strategy="most_frequent")
+    dumPredList = []
+    for y in yList:
+        dummy_clf.fit(y,y)
+        dumPredList.append(dummy_clf.predict(y))
+    dumMetrics, dumMergedMetrics = getMetricLists(dumPredList,yList, eNames)
+    dumMetrics['model'] = ['Baseline']*num_inst
+
+    dumMetrics['Timepoint'] = [pathwaySet]*num_inst
+    dumMetrics['features'] = [features]*num_inst
+
+    dumMergedMetrics['model'] = ['Baseline']
+    dumMergedMetrics['Timepoint'] = [pathwaySet]
+    dumMergedMetrics['features'] = [features]
+    namedDF = matchNamesPreds(dumPredList,yList,eNames)
+
+    return metrics, mergedMetrics, namedDF, dumMetrics, dumMergedMetrics
 
 def matchNamesPreds(predList,yList,eNames):
     nameAll = []
@@ -108,7 +127,6 @@ def matchNamesPreds(predList,yList,eNames):
             pred = list(predList[i])
             y = list(yList[i])
         names = list(eNames[i])
-        #print(names)
         nameAll += names
         yAll += y
         predAll += pred
@@ -125,105 +143,6 @@ def matchNamesPreds(predList,yList,eNames):
     eDF = eDF.drop_duplicates(subset='Name',ignore_index=True)
     print(eDF.dtypes)
     return eDF
-
-
-
-
-def evalPGM(inFile):
-    locList = ["cytosol","extracellular","membrane","nucleus","secretory-pathway","mitochondrion"]
-    locDict = {"cytosol":0,"extracellular":1,"membrane":2,"mitochondrion":5,"nucleus":3,"secretory-pathway":4}
-    colNames = ["Interactor1", "Edge Type", "Interactor2", "Location"]
-
-    resultsData = torch.load(inFile)
-    inF = resultsData['inF']
-    mName = resultsData['mName']
-    netF = resultsData['netF']
-
-    allPathDF = dict()
-    for line in open(netF, "r"):
-        pName = line.strip().split("/")[-1]
-        pathDF = pd.read_csv(line.strip(), sep="\t", header=None, names=colNames, dtype=str)
-        pathDF["edgeStr"] = pathDF["Interactor1"] + "_" + pathDF["Interactor2"]
-        allPathDF[pName] = pathDF
-    allPredDict = dict()
-    allYDict = dict()
-    curPred = []
-    curY=[]
-    pName = ""
-    for line in open(inF):
-        lineList = line.strip().split()
-        if len(lineList)<3:
-            #New pathway
-            if len(curPred)>0:
-                allPredDict[pName] = curPred
-                allYDict[pName] = curY
-            pName = line.strip().split("/")[-1]
-            pName = "_".join(pName.split("_")[1:])
-            curPred = []
-            curY = []
-        else:
-            i1 = lineList[0]
-            i2 = lineList[1]
-            pred = lineList[2]
-            edgeStr = i1+"_"+i2
-            y = allPathDF[pName][allPathDF[pName]['edgeStr']==edgeStr].iloc[0]["Location"]
-            curPred.append(locDict[pred])
-            curY.append(locDict[y])
-    yList = []
-    predList = []
-    for p in allYDict:
-        yList.append(allYDict[p])
-        predList.append(allPredDict[p])
-    metrics, mergedMetrics = getMetricLists(predList, yList)
-
-    num_inst = len(yList)
-    metrics['model'] = [mName]*num_inst
-
-    dataFList = inFile.split('-')
-    pathwaySet = dataFList[1]
-    features = dataFList[2][:-2] #get rid of '.p'
-    metrics['Timepoint'] = [pathwaySet]*num_inst
-    metrics['features'] = [features]*num_inst
-
-    mergedMetrics['model'] = [mName]
-    mergedMetrics['data'] = [pathwaySet]
-    mergedMetrics['features'] = [features]
-    return metrics, mergedMetrics
-
-def evalSKModel(inFile):
-    locList = ["cytosol","extracellular","membrane","nucleus","secretory-pathway","mitochondrion"]
-    locDict = {"cytosol":0,"extracellular":1,"membrane":2,"mitochondrion":5,"nucleus":3,"secretory-pathway":4}
-    colNames = ["Interactor1", "Edge Type", "Interactor2", "Location"]
-
-    resultsData = torch.load(inFile)
-    mName = resultsData['model']
-    preds = resultsData['predictions']
-    yAll = resultsData['y_all']
-    netInd = resultsData['network_index']
-
-    predList = []
-    yList = []
-    for net in netInd:
-        curY = yAll[netInd[net]]
-        curPred = preds[netInd[net]]
-        yList.append(curY)
-        predList.append(curPred)
-
-    metrics, mergedMetrics = getMetricLists(predList, yList)
-
-    num_inst = len(yList)
-    metrics['model'] = [mName]*num_inst
-
-    dataFList = inFile.split('-')
-    pathwaySet = dataFList[1]
-    features = dataFList[2][:-2] #get rid of '.p'
-    metrics['Timepoint'] = [pathwaySet]*num_inst
-    metrics['features'] = [features]*num_inst
-
-    mergedMetrics['model'] = [mName]
-    mergedMetrics['Timepoint'] = [pathwaySet]
-    mergedMetrics['features'] = [features]
-    return metrics, mergedMetrics
 
 def getOuts(loader, model):
      model.eval()
@@ -243,7 +162,6 @@ def getOuts(loader, model):
             predB = torch.masked_select(pred, torch.logical_and(edgeBatch==i,data.is_pred))
             yB = torch.masked_select(data.y, torch.logical_and(edgeBatch==i,data.is_pred))
             e_name = np.concatenate(data.e_name, axis=0)[torch.logical_and(edgeBatch==i,data.is_pred).numpy()]
-            #e_name = torch.masked_select(data.e_name, torch.logical_and(edgeBatch==i,data.is_pred))
             predList.append(predB)
             yList.append(yB)
             eNames.append(e_name)
@@ -274,7 +192,7 @@ def getMetricLists(predList,yList,eNames):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', category=UserWarning)
             mcc = matthews_corrcoef(y,pred)
-            f1 = f1_score(y, pred, average='micro')
+            f1 = f1_score(y, pred, average='weighted')
             acc = accuracy_score(y, pred)
             bacc = balanced_accuracy_score(y, pred)
             mccList.append(mcc)
@@ -285,7 +203,7 @@ def getMetricLists(predList,yList,eNames):
 
     netOut = {'mcc':mccList, 'f1':f1List, 'Accuracy':accList, 'Balanced Accuracy':baccList, 'p_size':sizeList}
     allOut = {'mcc':[matthews_corrcoef(totalY, totalPred)],
-              'f1':[f1_score(totalY, totalPred, average='micro')],
+              'f1':[f1_score(totalY, totalPred, average='macro')],
               'Accuracy':[accuracy_score(totalY, totalPred)],
               'Balanced Accuracy':[balanced_accuracy_score(totalY, totalPred)],
               'p_size':[len(totalY)]}
@@ -307,11 +225,8 @@ def getEmbedding(loader, model):
     return embeddingAll, yAll
 
 def evalModels(models, train_loaders, test_loaders, mName, parameters, resultsData, lr):
-    #optimizers = []
     losses = resultsData['losses']
     for i in range(len(train_loaders)):
-        #optimizers.append(torch.optim.Adam(models[i].parameters(), lr=lr))
-        #optimizers[i].load_state_dict(resultsData['optimizer_states'][i])
         model_states = resultsData['model_states']
 
         models[i].load_state_dict(model_states[i])
@@ -329,7 +244,8 @@ def plotMetric(metricDF, metric_name, x_val = None, hue=None, title="", ax=None)
     if "Merged" in title:
         sns.barplot(x=x_val,y=metric_name, hue=hue, data=metricDF, ax=ax)
     else:
-        sns.boxplot(x=x_val,y=metric_name, hue=hue, data=metricDF, ax=ax)
+        order = ["Pathway Database","Diff. Experiment","Same Experiment","Baseline"]
+        sns.boxplot(x=x_val,y=metric_name, hue=hue, data=metricDF, ax=ax,order=order)
     plt.title(title)
 
 if __name__ == "__main__":
@@ -342,13 +258,15 @@ if __name__ == "__main__":
     for f in fList:
         print("Loading "+f+"...")
         metrics = None
+        dumMetrics = None
         mergedMetrics = None
+        dumMergedMetrics = None
         if f[:3]=="pgm":
             metrics, mergedMetrics = evalPGM(f)
         elif f[:3]=="sk_":
             metrics, mergedMetrics = evalSKModel(f)
         else:
-            metrics, mergedMetrics, namedDF = evalCNNs(f)
+            metrics, mergedMetrics, namedDF, dumMetrics, dumMergedMetrics = evalCNNs(f)
             namedList.append(namedDF)
         numInst = 0
         for m in metrics:
@@ -357,53 +275,40 @@ if __name__ == "__main__":
                 perfsMerged[m] = []
             perfs[m] += metrics[m]
             perfsMerged[m] += mergedMetrics[m]
+            perfs[m] += dumMetrics[m]
+            perfsMerged[m] += dumMergedMetrics[m]
             numInst = len(metrics[m])
     metricDF = pd.DataFrame.from_dict(perfs)
     metricMergedDF = pd.DataFrame.from_dict(perfsMerged)
 
     sns.set_theme(style="white", context='paper')
-    sns.set(font_scale=1.4)
-    sns.set_palette('flare')
+    sns.set(font_scale=2.0)
+    sns.set_palette('crest')
     plt.rcParams["font.weight"] = "bold"
     plt.rcParams["axes.labelweight"] = "bold"
+    plt.rcParams["figure.figsize"] = (12,5)
 
-    #plotMetric(metricMergedDF, 'Balanced Accuracy', x_val='model', hue='features')
-    #f, (ax1, ax2) = plt.subplots(1,2)
-    #plotMetric(metricDF, 'Accuracy', x_val='Timepoint', hue=None, ax=ax1)
-    #plotMetric(metricDF, 'Balanced Accuracy', x_val='Timepoint', hue=None, ax=ax2)
-    #plt.show()
+    plt.rcParams['font.sans-serif'] = "Oswald"
+    plt.rcParams['font.family'] = "sans-serif"
 
-    #Calculate translocation events
-    if len(namedList) != 2:
-        print("This is not what I thought")
-    joinedDF = namedList[0].merge(namedList[1], on='Name', how='inner',suffixes=('_24','_120'))
-    print(len(namedList[1]))
-    print(len(namedList[0]))
-    print(len(joinedDF))
-    joinedDF['locChanged'] = joinedDF['Location_24']!=joinedDF['Location_120']
-    joinedDF['pred_locChanged'] = joinedDF['Predicted Location_24']!=joinedDF['Predicted Location_120']
-    print("Localization Change")
-    print(len(joinedDF[joinedDF['pred_locChanged']]))
-    print(len(joinedDF[joinedDF['locChanged']]))
-    print(len(joinedDF[joinedDF[['locChanged','pred_locChanged']].all(axis='columns')]))
+    metricDF = metricDF[(metricDF.model!='Baseline') | ((metricDF.Timepoint!='120hpi') & (metricDF.Timepoint!='samehpi'))]
 
-    print("No Localization Change")
-    print(len(joinedDF[~joinedDF['pred_locChanged']]))
-    print(len(joinedDF[~joinedDF['locChanged']]))
-    print(len(joinedDF[~joinedDF[['locChanged','pred_locChanged']].any(axis='columns')]))
+    #Give things nice names
+    metricDF.Timepoint[metricDF.Timepoint=='120hpi'] = "Pathway Database"
+    metricDF.Timepoint[metricDF.Timepoint=='samehpi'] = "Same Experiment"
+    metricDF.Timepoint[metricDF.Timepoint=='egf120hpi'] = "Diff. Experiment"
+    metricDF.Timepoint[metricDF.model=='Baseline'] = "Baseline"
 
-    print("Localization Change But also we got the right loc")
-    joinedDF['correct_24'] = joinedDF['Predicted Location_120']==joinedDF['Location_120']
-    joinedDF['correct_120'] = joinedDF['Location_24']==joinedDF['Predicted Location_24']
-    joinedDF['correct_all'] = joinedDF[['correct_24','correct_120']].all(axis='columns')
-    joinedDF['correct_all_loc'] = joinedDF[['correct_all','locChanged','pred_locChanged']].all(axis='columns')
+    print(metricDF.groupby(["Timepoint"]).mean())
+    f, (ax1) = plt.subplots(1,1)
+    plotMetric(metricDF, 'f1', x_val='Timepoint', ax=ax1)
+    ax1.set_ylabel('F1 Score')
+    ax1.set_xlabel('Training Data')
+    ax1.set_ylim(bottom=0)
+    ax1.set_ylim(top=1)
+    plt.show()
 
-    print(len(joinedDF[joinedDF['correct_all_loc']]))
-    print(len(joinedDF[joinedDF['correct_all']]))
-    changedDF = joinedDF[joinedDF['locChanged']]
-
-
-    #torch.save({'metrics':metricDF},'results/allRes.p')
+    torch.save({'metrics':metricDF},'results/allRes.p')
 
 
 

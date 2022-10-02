@@ -87,7 +87,7 @@ def train(loader, model, optimizer, criterion,device):
          #   data = data[0]
          data.to(device)
          out,e = model(data.x, data.edge_index, data.batch)  # Perform a single forward pass.
-         loss = criterion(out[data.is_marker], data.y[data.is_marker])  # Compute the loss only where we have data
+         loss = criterion(out[data.is_pred], data.y[data.is_pred])  # Compute the loss only where we have data
          loss.backward()  # Derive gradients.
          optimizer.step()  # Update parameters based on gradients.
 
@@ -107,17 +107,11 @@ def testTraining(loader, model,device, validationRun, test=False):
          if allPred is None:
              allPred = pred.cpu().numpy()
              allY = data.y.cpu().numpy()
-             if validationRun or not test:
-                 testInd = data.is_marker.cpu().numpy()
-             else:
-                 testInd = data.is_pred.cpu().numpy()
+             testInd = data.is_pred.cpu().numpy()
          else:
             allPred = np.concatenate((allPred,pred.cpu().numpy()))
             allY = np.concatenate((allY, data.y.cpu().numpy()))
-            if validationRun or not test:
-                testInd = np.concatenate((testInd,data.is_marker.cpu().numpy()))
-            else:
-                testInd = np.concatenate((testInd,data.is_pred.cpu().numpy()))
+            testInd = np.concatenate((testInd,data.is_pred.cpu().numpy()))
      #We supress warnings otherwise we get yelled at for the first few epochs every time
      bal_acc = 0
      with warnings.catch_warnings():
@@ -186,7 +180,7 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
         for i in range(len(train_loaders)):
             models[i].load_state_dict(model_states[i])
             optimizers[i].load_state_dict(optimizer_states[i])
-        start_epoch = 295#checkpoint['epoch']
+        start_epoch = 1 #checkpoint['epoch']
 
     #Start training
     test_acc_batch_list = []
@@ -217,15 +211,16 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
         train_acc_list.append(train_acc_total/len(train_loaders))
         test_acc_list.append(test_acc_total/len(train_loaders))
 
-        if bestAcc < test_acc_list[-1] or epoch<100:
-            patienceLeft = patience
-            bestAcc = test_acc_list[-1]
-            bestEpoch = epoch
-        else:
-            patienceLeft-=1
-        if patienceLeft==0 and validationRun:
-            print('Stopping early due to lack of validation improvements')
-            break
+        if validationRun:
+            if bestAcc < test_acc_list[-1] or epoch<100:
+                patienceLeft = patience
+                bestAcc = test_acc_list[-1]
+                bestEpoch = epoch
+            else:
+                patienceLeft-=1
+            if patienceLeft==0 and validationRun:
+                print('Stopping early due to lack of validation improvements')
+                break
 
         if (epoch%print_interval)==0:
             print(parameters['outputFile'],f' Epoch: {epoch:03d}, Train Acc: {train_acc_list[-1]:.4f}, Test Acc: {test_acc_list[-1]:.4f}')

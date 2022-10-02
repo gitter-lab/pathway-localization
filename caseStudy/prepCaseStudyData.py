@@ -25,12 +25,10 @@ import os.path
 
 seed = 24
 torch.manual_seed(seed)
-np.random.seed(seed) #TODO numpy now reccomends using generators to create random states
+np.random.seed(seed)
 
 def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_map_file, all_folds, pred_data):
     allPathNets, allPathDFs, featuresDF, locDict, pOrder = pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_file, pred_data, all_folds)
-
-
 
     #So I'll want a graph object for each pathway as a networkx graph
     dataList = []
@@ -45,25 +43,59 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
         graphData.num_classes = len(locDict)
         dataList.append(graphData)
 
-    # ### Train-Test Split With Mini-Batching
+    #Train-Test Split With Mini-Batching
     nFolds = 5
     kf = KFold(n_splits = nFolds)
 
-    train_sets = []
-    test_sets = []
     train_loaders = []
     test_loaders = []
 
-    #Currently jenky
+    #Used when we skip training and use a pretrained model
     if all_folds=="all":
         trains = []
         tests = []
         for i in range(len(dataList)):
             trains.append(dataList[i])
             tests.append(dataList[i])
-        train_sets.append(trains)
-        test_sets.append(tests)
 
+        train_loader = DataLoader(trains, batch_size=512, shuffle=False)
+        test_loader = DataLoader(tests, batch_size=512, shuffle=False)
+
+        train_loaders.append(train_loader)
+        test_loaders.append(test_loader)
+
+    #Here we hardcoded the dataset indices. This is not great, but it works.
+    elif 'egf' in pred_data:
+        trains = []
+        tests = []
+        for i in range(453):
+            trains.append(dataList[i])
+        for i in range(453,len(dataList)):
+            tests.append(dataList[i])
+        train_loader = DataLoader(trains, batch_size=512, shuffle=False)
+        test_loader = DataLoader(tests, batch_size=512, shuffle=False)
+
+        train_loaders.append(train_loader)
+        test_loaders.append(test_loader)
+    elif 'same' in pred_data:
+        trains = []
+        tests = []
+        for i in range(492):
+            trains.append(dataList[i])
+        for i in range(492,len(dataList)):
+            tests.append(dataList[i])
+        train_loader = DataLoader(trains, batch_size=512, shuffle=False)
+        test_loader = DataLoader(tests, batch_size=512, shuffle=False)
+
+        train_loaders.append(train_loader)
+        test_loaders.append(test_loader)
+    elif all_folds=="half":
+        trains = []
+        tests = []
+        for i in range(int(len(dataList)/2)):
+            trains.append(dataList[i])
+        for i in range(int(len(dataList)/2),len(dataList)):
+            tests.append(dataList[i])
         train_loader = DataLoader(trains, batch_size=512, shuffle=False)
         test_loader = DataLoader(tests, batch_size=512, shuffle=False)
 
@@ -77,9 +109,6 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
                 trains.append(dataList[ind])
             for ind in te_ind:
                 tests.append(dataList[ind])
-
-            train_sets.append(trains)
-            test_sets.append(tests)
 
             train_loader = DataLoader(trains, batch_size=512, shuffle=False)
             test_loader = DataLoader(tests, batch_size=512, shuffle=False)
@@ -126,11 +155,22 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
             continue
         predDataDict[lineList[0]] = lineList[1]
 
+    predDataDictTMT = dict()
+    if 'egf' in pred_data or 'same' in pred_data:
+        pred_dataTMT = 'data/tmtLocs120hpi.csv'
+        for line in open(pred_dataTMT, "r"):
+            lineList=line.strip().split(',')
+            if lineList[1]=='NA':
+                continue
+            predDataDictTMT[lineList[0]] = lineList[1]
+
+    pathsOrder = []
     for line in open(networks_file, "r"):
         pName = line.strip().split("/")[-1]
         pathDF = pd.read_csv(line.strip(), sep=" ", header=None, names=colNames, dtype=str)
         if len(pathDF) >= MIN_NETWORK_SIZE_THRESHOLD:
             allPathDFs[pName] = pathDF
+            pathsOrder.append(pName)
 
     totalE = 0
     misses = 0
@@ -168,16 +208,21 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
             if loc != "none":
                 isMarker.append(True)
             else:
-                isMarker.append(False)
+                #Marker no longer does anything since we just use pretrained models for the timeseries data
+                isMarker.append(True)
             if (loc=='none'):
-                if (i1 in predDataDict) and (i2 in predDataDict):
-                    loc1 = predDataDict[i1]
-                    loc2 = predDataDict[i2]
+                if 'egf' in p or '24' in p:
+                    curPredData = predDataDict
+                else:
+                    curPredData = predDataDictTMT
+                if (i1 in curPredData) and (i2 in curPredData):
+                    loc1 = curPredData[i1]
+                    loc2 = curPredData[i2]
                     loc = loc1
-                elif i1 in predDataDict:
-                    loc = predDataDict[i1]
-                elif i2 in predDataDict:
-                    loc = predDataDict[i2]
+                elif i1 in curPredData:
+                    loc = curPredData[i1]
+                elif i2 in curPredData:
+                    loc = curPredData[i2]
                 else:
                     loc = "none"
                 locs[-1] = loc
@@ -198,7 +243,7 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
         allPathNets[p] = nx.from_pandas_edgelist(pathDF, source='Interactor1',
                                                  target='Interactor2', edge_attr= ['Location','e_name','loc_feat','is_marker','is_pred'])
 
-    print("Loaded in %d pathways with %f percent misses and %d predictions" %(len(allPathDFs), 100*float(misses)/totalE, totalPred))
+    print("Loaded in %d pathways with %f percent misses and %d predictions % edges" %(len(allPathDFs), 100*float(misses)/totalE, totalPred, totalE))
 
 
     #Load in all comPPI Data as a dataframe too
@@ -220,10 +265,12 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
         nx.set_node_attributes(net, featuresDict)
 
     #Make sure we have a canonical ordering for all models
-    pOrder = list(allPathNets.keys())
-    np.random.shuffle(pOrder)
+    if all_folds=='half':
+        pOrder = pathsOrder
+    else:
+        pOrder = list(allPathNets.keys())
+        np.random.shuffle(pOrder)
 
-    #print(allPathDFs)
     return allPathNets, allPathDFs, featuresDF, locDict, pOrder
 
 if __name__ == "__main__":
@@ -235,10 +282,6 @@ if __name__ == "__main__":
     all_folds = argv[6]
     pred_data = argv[7]
 
-    #networks_file = 'allDevReactomePathsCom.txt'
-    #networks_file = 'allDevReactomePaths.txt'
-    #features_file = '../scripts/exploratoryScripts/comPPINodes.tsv'
-    #features_file = '../data/uniprotKeywords/mergedKeyWords_5.tsv'
     getCaseStudyData(networks_file, features_file, outFile, markers_file, name_map_file, all_folds, pred_data)
 
 
