@@ -28,7 +28,7 @@ ComPPI data were retrieved on November 9, 2022. These files were licensed with t
 
 Compartments data were retrieved on September 29, 2021. These files were licensed with the [CC BY 4.0 license](https://compartments.jensenlab.org/Downloads).
 
-UniProt data were licensed with the [CC BY 4.0 license](https://www.uniprot.org/help/license).
+UniProt data were retreieved in October 2021. These files were licensed with the [CC BY 4.0 license](https://www.uniprot.org/help/license).
 
 ## License
 All software (files matching the patterns `Snakefile`,`*.py`, and `*.sh`) is available under a MIT licenese ([`LICENSE-MIT.txt`](LICENSE-MIT.txt)).
