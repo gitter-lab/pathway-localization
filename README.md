@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7140733.svg)](https://doi.org/10.5281/zenodo.7140733)
+
 Scripts, data, and supplementary information for "Graph algorithms for predicting subcellular localization at the pathway level".
 
 Supplementary text, figures, and tables can be found in `supplement.pdf`
