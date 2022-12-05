@@ -1,4 +1,4 @@
-#Args: networks features model output oDir
+#Args: networks features model output outputDir
 
 mkdir ${5}
 

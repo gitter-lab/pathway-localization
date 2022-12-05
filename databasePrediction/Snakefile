@@ -5,20 +5,32 @@ NETWORKS=['allReactomePaths','allPathBank']
 NAIVE_FEATURES=['comPPINodes','compartmentsNodes']
 FEATURES=['comPPINodes','compartmentsNodes','mergedKeyWords_5']
 
+#If pgm models have not been compiled, we can't run them
+from os.path import exists
+if not (exists('pgm/train_nets') and exists('pgm/no_training_model')):
+    PGM_MODELS=[]
+
+#This rule makes sure that all the data has been unzipped before running other steps.
+rule unpack_data:
+    output:
+        unpackedProof = "data/data-is-unpacked.txt"
+    shell:
+        "bash unpackData.sh {output.unpackedProof}"
 
 #The PGM code is tricky to install and uses c++, so it's not currently automatable. 
 #Right now we just assume you have the compiled code in the right places. 
 rule pgm_runs:
     input:
-        net="data/{networks}.txt",
-        feat="data/{features}.tsv"
+        unpacked = "data/data-is-unpacked.txt",
+        net = "data/{networks}.txt",
+        feat = "data/{features}.tsv"
     params:
         curModel = "{pgm_model}",
-        oDir = "pgm_runs/pgm_{pgm_model}-{networks}-{features}"
+        outputDir = "pgm_runs/pgm_{pgm_model}-{networks}-{features}"
     output:
         full = "pgm_runs/pgm_{pgm_model}-{networks}-{features}.p"
     shell:
-        "bash runPGM.sh {input.net} {input.feat} {params.curModel} {output.full} {params.oDir};"
+        "bash runPGM.sh {input.net} {input.feat} {params.curModel} {output.full} {params.outputDir};"
 
 #The entire sklearn workflow takes <5 minutes to run, 
 #so it feels like wasted effort to break this into multiple rules 
@@ -26,9 +38,10 @@ rule pgm_runs:
 # Note: _val stands for validation and are generally random 10% subsets of the total dataset. 
 rule sklearn_runs:
     input:
-        net="data/{networks}.txt",
-        netV="data/{networks}.txt_val",
-        feat="data/{features}.tsv"
+        unpacked = "data/data-is-unpacked.txt",
+        net = "data/{networks}.txt",
+        netV = "data/{networks}.txt_val",
+        feat = "data/{features}.tsv"
     params:
         curModel = "{sk_model}"
     output:
@@ -39,12 +52,13 @@ rule sklearn_runs:
 #Take in network files, features, and ground-truth labels to create pytorch data objects. 
 rule make_pytorch_datasets:
     input:
-        net="data/{networks}.txt",
-        netV="data/{networks}.txt_val",
-        feat="data/{features}.tsv"
+        unpacked = "data/data-is-unpacked.txt",
+        net = "data/{networks}.txt",
+        netV = "data/{networks}.txt_val",
+        feat = "data/{features}.tsv"
     output:
-        full="torchDatasets/{networks}-{features}.p",
-        val="torchDatasets/{networks}-{features}.p_val"
+        full = "torchDatasets/{networks}-{features}.p",
+        val = "torchDatasets/{networks}-{features}.p_val"
     shell:
         "python prepPytorchData.py {input.net} {input.feat} {output.full};"
         "python prepPytorchData.py {input.netV} {input.feat} {output.val}"
@@ -85,7 +99,7 @@ rule analyze_results:
 #Finally, create plots. 
 rule all:
     input:
-        res="results/allRes.p"
+        res = "results/allRes.p"
     shell:
         "python plotResults.py {input.res}"
 
