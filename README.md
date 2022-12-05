@@ -23,6 +23,14 @@ Then run:
 
 `python plotResults.py results/allRes.p`
 
+## Running localization prediction
+
+After setting up the conda environment, running
+
+`snakemake --cores 1 all`
+
+will run the full localization prediction experiment. 
+
 ## Datasets
 Reactome data were from version 72 retrieved on June 26, 2020. These files were licensed with the [CC0 license](https://reactome.org/license).
 
