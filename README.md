@@ -32,18 +32,17 @@ After setting up the conda environment, running
 will run the full localization prediction experiment. 
 
 ## Datasets
-Reactome data were from version 72 retrieved on June 26, 2020. These files were licensed with the [CC0 license](https://reactome.org/license).
+- Reactome data were from version 72 retrieved on June 26, 2020. These files were licensed with the [CC0 license](https://reactome.org/license).
+- [Pathway Commons](http://www.pathwaycommons.org/) data were from version 12 retrieved on June 26, 2020. These files have the same licenses as the original source databases. The PathBank files were licensed with the [ODbL v1.0 license](https://www.pathbank.org/about).
+- ComPPI data were retrieved on November 9, 2022. These files were licensed with the [CC BY-SA 4.0 license](https://comppi.linkgroup.hu/help/terms_of_use).
+- Compartments data were retrieved on September 29, 2021. These files were licensed with the [CC BY 4.0 license](https://compartments.jensenlab.org/Downloads).
+- UniProt data were retreieved in October 2021. These files were licensed with the [CC BY 4.0 license](https://www.uniprot.org/help/license).
 
-[Pathway Commons](http://www.pathwaycommons.org/) data were from version 12 retrieved on June 26, 2020. These files have the same licenses as the original source databases.
+Any publications using these datasets should cite the original sources of the data.
 
-ComPPI data were retrieved on November 9, 2022. These files were licensed with the [CC BY-SA 4.0 license](https://comppi.linkgroup.hu/help/terms_of_use).
-
-Compartments data were retrieved on September 29, 2021. These files were licensed with the [CC BY 4.0 license](https://compartments.jensenlab.org/Downloads).
-
-UniProt data were retreieved in October 2021. These files were licensed with the [CC BY 4.0 license](https://www.uniprot.org/help/license).
-
-## License
+## Licenses
 All software (files matching the patterns `Snakefile`,`*.py`, and `*.sh`) is available under a MIT licenese ([`LICENSE-MIT.txt`](LICENSE-MIT.txt)).
 
-All other files (including data, figures, and the supplementary information) are availble under a CC BY 4.0 license ([`LICENSE-CC-BY.txt`](LICENSE-CC-BY.txt)) except for those derived from ComPPI.
+All other files (including data, figures, and the supplementary information) are availble under a CC BY 4.0 license ([`LICENSE-CC-BY.txt`](LICENSE-CC-BY.txt)) except for those derived from PathBank and ComPPI.
+Files derived from PathBank (`data/labeledPathBank.zip`) are available under a [ODbL v1.0 license](https://opendatacommons.org/licenses/odbl/1-0/) in accordance with the PathBank [terms of use](https://www.pathbank.org/about).
 Files derived from ComPPI (`databasePrediction/data/comPPINodes.tsv`) are available under a [CC BY-SA 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/) in accordance with the ComPPI [terms of use](https://comppi.linkgroup.hu/help/terms_of_use).
