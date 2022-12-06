@@ -1,13 +1,15 @@
 MODELS=['LinearNN', 'SimpleGCN', 'GATCONV', 'GIN2']
 SKLEARN_MODELS=['logit','rf']
-PGM_MODELS=['TrainedPGM','NaivePGM']
 NETWORKS=['allReactomePaths','allPathBank']
 NAIVE_FEATURES=['comPPINodes','compartmentsNodes']
 FEATURES=['comPPINodes','compartmentsNodes','mergedKeyWords_5']
 
+SKLEARN_MODELS=[]
 #If pgm models have not been compiled, we can't run them
-from os.path import exists
-if not (exists('pgm/train_nets') and exists('pgm/no_training_model')):
+from os.path import isfile
+if (isfile('pgm/train_nets') and isfile('pgm/no_training_model')):
+    PGM_MODELS=['TrainedPGM','NaivePGM']
+else:
     PGM_MODELS=[]
 
 #This rule makes sure that all the data has been unzipped before running other steps.
@@ -89,8 +91,8 @@ rule analyze_results:
     input:
         expand("runs/{model}-{networks}-{features}.p", model=MODELS,networks=NETWORKS,features=FEATURES),
         expand("sk_runs/sk_{sk_model}-{networks}-{features}.p", sk_model=SKLEARN_MODELS,networks=NETWORKS,features=FEATURES),
-        expand("pgm_runs/pgm_TrainedPGM-{networks}-{features}.p", pgm_model=PGM_MODELS,networks=NETWORKS,features=FEATURES),
-        expand("pgm_runs/pgm_NaivePGM-{networks}-{features}.p", pgm_model=PGM_MODELS,networks=NETWORKS,features=NAIVE_FEATURES)
+        #expand("pgm_runs/pgm_TrainedPGM-{networks}-{features}.p", pgm_model=PGM_MODELS,networks=NETWORKS,features=FEATURES),
+        #expand("pgm_runs/pgm_NaivePGM-{networks}-{features}.p", pgm_model=PGM_MODELS,networks=NETWORKS,features=NAIVE_FEATURES)
     output:
         "results/allRes.p"
     shell:

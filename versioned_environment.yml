@@ -1,0 +1,21 @@
+name: pw_loc
+channels:
+  - pyg
+  - pytorch
+  - conda-forge
+dependencies:
+  - networkx=2.6.3
+  - numpy=1.21.2
+  - pandas=1.3.4
+  - pip=22.3.1
+  - pyg
+  - python=3.9
+  - pytorch=1.10
+  - torchaudio=0.10.1
+  - torchvision=0.11.2
+  - scikit-learn=1.0.2
+  - scikit-optimize=0.9.0
+  - seaborn=0.11.2
+  - bioconda::snakemake-minimal=7.18.2
+  - pip:
+      ax-platform==0.2.3
