@@ -24,10 +24,9 @@ Supplementary text, figures, and tables can be found in `supplement.pdf`
    conda env create -f environment.yml
    conda activate pw_loc
    ```
-
    to create a conda environment with the required packages and activate that environment.
    
-3. Install [Ax](https://ax.dev/)
+3. Install [Ax](https://ax.dev/).
    
    The `ax-platform` package, used for Bayesian optimization within PyTorch, needs to be installed separately using `pip` after activating the environment:
    ```
