@@ -12,40 +12,52 @@ Supplementary text, figures, and tables can be found in `supplement.pdf`
 
 1. Install python/anaconda if needed.
 
-The easiest way to install Python and the required packages is with [Anaconda](https://www.anaconda.com/download/).
-The Carpentries [Anaconda installation instructions](https://carpentries.github.io/workshop-template/#python) provide guides and videos on how to install Anaconda for your operating system.
-After installing Anaconda, you can run the following commands from the root directory of the `spras` repository
+   The easiest way to install Python and the required packages is with [Anaconda](https://www.anaconda.com/download/).
+   The Carpentries [Anaconda installation instructions](https://carpentries.github.io/workshop-template/#python) provide guides and videos on how to install Anaconda for your operating system.
+   After installing Anaconda, you can run the following commands from the root directory of the `spras` repository
 
 2. Create the conda environment.
 
-From the pathway-localization directory, run
-```
-conda env create -f environment.yml
-conda activate pw_loc
-pip3 install ax-platform --no-cache-dir
-```
-to create a conda environment with the required packages and activate that environment.
+   From the pathway-localization directory, run
 
-The `ax-platform` package, used for Bayesian optimization within PyTorch, needs to be installed separately using `pip` after activating the environment. 
+   ```
+   conda env create -f environment.yml
+   conda activate pw_loc
+   ```
 
+   to create a conda environment with the required packages and activate that environment.
+   
+3. Install [Ax](https://ax.dev/)
+   
+   The `ax-platform` package, used for Bayesian optimization within PyTorch, needs to be installed separately using `pip` after activating the environment:
+   ```
+   pip3 install ax-platform --no-cache-dir
+   ```
+   
 ## Recreating plots on archived results
 
 The files in the `databasePrediction` directory can be used to recreate plots from the manuscript.
 First, extract the file in `allRes.tar` into the results directory:
 
-`tar -xvzf allRes.tar`
+```
+tar -xvzf allRes.tar
+```
 
 Then run:
 
-`python plotResults.py results/allRes.p`
+```
+python plotResults.py results/allRes.p
+```
 
 ## Running localization prediction
 
 After following the steps in `Setting up the environment`, navigating to the directory `databasePrediction` and using the command:
 
-`snakemake --cores 1 all`
+```
+snakemake --cores [n] all
+```
 
-will run the full localization prediction experiment. 
+will run the full localization prediction experiment, where `[n]` is the number of desired cores.
 
 ## Datasets
 - Reactome data were from version 72 retrieved on June 26, 2020. These files were licensed with the [CC0 license](https://reactome.org/license).

@@ -4,7 +4,6 @@ NETWORKS=['allReactomePaths','allPathBank']
 NAIVE_FEATURES=['comPPINodes','compartmentsNodes']
 FEATURES=['comPPINodes','compartmentsNodes','mergedKeyWords_5']
 
-SKLEARN_MODELS=[]
 #If pgm models have not been compiled, we can't run them
 from os.path import isfile
 if (isfile('pgm/train_nets') and isfile('pgm/no_training_model')):

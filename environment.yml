@@ -4,14 +4,14 @@ channels:
   - pytorch
   - conda-forge
 dependencies:
-  - networkx
-  - numpy
-  - pandas
-  - pip
-  - pyg
-  - python
-  - pytorch
-  - scikit-learn
-  - scikit-optimize
-  - seaborn
-  - bioconda::snakemake-minimal
+  - networkx=2.8
+  - numpy=1.23
+  - pandas=1.5
+  - pip=22.3
+  - pyg=2.2
+  - python=3.10
+  - pytorch=1.13
+  - scikit-learn=1.1
+  - scikit-optimize=0.9
+  - seaborn=0.12
+  - bioconda::snakemake-minimal=7.18
