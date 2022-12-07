@@ -14,11 +14,10 @@ Supplementary text, figures, and tables can be found in `supplement.pdf`
 
    The easiest way to install Python and the required packages is with [Anaconda](https://www.anaconda.com/download/).
    The Carpentries [Anaconda installation instructions](https://carpentries.github.io/workshop-template/#python) provide guides and videos on how to install Anaconda for your operating system.
-   After installing Anaconda, you can run the following commands from the root directory of the `spras` repository
 
 2. Create the conda environment.
 
-   From the pathway-localization directory, run
+   From the `pathway-localization` directory, run
 
    ```
    conda env create -f environment.yml
