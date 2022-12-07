@@ -10,7 +10,23 @@ Supplementary text, figures, and tables can be found in `supplement.pdf`
 
 ## Setting up environment
 
-Instructions for setting up a conda environment are coming soon.
+1. Install python/anaconda if needed.
+
+The easiest way to install Python and the required packages is with [Anaconda](https://www.anaconda.com/download/).
+The Carpentries [Anaconda installation instructions](https://carpentries.github.io/workshop-template/#python) provide guides and videos on how to install Anaconda for your operating system.
+After installing Anaconda, you can run the following commands from the root directory of the `spras` repository
+
+2. Create the conda environment.
+
+From the pathway-localization directory, run
+```
+conda env create -f environment.yml
+conda activate pw_loc
+pip3 install ax-platform --no-cache-dir
+```
+to create a conda environment with the required packages and activate that environment.
+
+The `ax-platform` package, used for Bayesian optimization within PyTorch, needs to be installed separately using `pip` after activating the environment. 
 
 ## Recreating plots on archived results
 
@@ -25,7 +41,7 @@ Then run:
 
 ## Running localization prediction
 
-After setting up the conda environment, running
+After following the steps in `Setting up the environment`, navigating to the directory `databasePrediction` and using the command:
 
 `snakemake --cores 1 all`
 
