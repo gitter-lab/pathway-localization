@@ -15,3 +15,4 @@ dependencies:
   - scikit-optimize=0.9
   - seaborn=0.12
   - bioconda::snakemake-minimal=7.18
+  - ax-platform=0.2
