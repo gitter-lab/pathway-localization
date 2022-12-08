@@ -25,13 +25,6 @@ Supplementary text, figures, and tables can be found in `supplement.pdf`
    ```
    to create a conda environment with the required packages and activate that environment.
    
-3. Install [Ax](https://ax.dev/).
-   
-   The `ax-platform` package, used for Bayesian optimization within PyTorch, needs to be installed separately using `pip` after activating the environment:
-   ```
-   pip3 install ax-platform --no-cache-dir
-   ```
-   
 ## Recreating plots on archived results
 
 The files in the `databasePrediction` directory can be used to recreate plots from the manuscript.
