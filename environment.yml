@@ -4,6 +4,7 @@ channels:
   - pytorch
   - conda-forge
 dependencies:
+  - ax-platform=0.2  
   - networkx=2.8
   - numpy=1.23
   - pandas=1.5
