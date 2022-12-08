@@ -1,7 +1,7 @@
 from sys import argv
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import GridSearchCV,KFold
+from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import get_scorer

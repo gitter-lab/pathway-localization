@@ -1,24 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-import pandas as pd
-import networkx as nx
-import numpy as np
-import torch
-from torch_geometric.utils.convert import from_networkx
-from torch_geometric.transforms import RandomNodeSplit
-from torch_geometric.loader import DataLoader
-import torch.nn.functional as F
-from torch.nn import Linear, Sequential, BatchNorm1d, ReLU
-from torch_geometric.nn import GCNConv, GINConv, GATv2Conv
-import random
-import math
-from sklearn.model_selection import KFold
-from sys import argv
-import pickle as pkl
-import os.path
-from scipy.stats import sem
-from ax.service.ax_client import AxClient
-from models import *
 from localizationPyTorchGeo import *
 
 seed = 24
@@ -82,7 +63,7 @@ if __name__ == "__main__":
         parameters, trial_index = ax_client.get_next_trial()
         #We stalled out, no need to continue
         if pastParams1 == parameters:
-            print("Stoppong Ax Early Because Trials Started Repeating")
+            print("Stopping Ax Early Because Trials Started Repeating")
             break
         # Local evaluation here can be replaced with deployment to external system.
         ax_client.complete_trial(trial_index=trial_index, raw_data=testCNNs(parameters))

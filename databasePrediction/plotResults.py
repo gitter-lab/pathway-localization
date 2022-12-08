@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-import pandas as pd
 from sys import argv
 import matplotlib.pyplot as plt
 import seaborn as sns

@@ -1,22 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import networkx as nx
 import numpy as np
 import torch
 from torch_geometric.utils.convert import from_networkx
-from torch_geometric.transforms import RandomNodeSplit
 from torch_geometric.loader import DataLoader
-import torch.nn.functional as F
-from torch.nn import Linear, Sequential, BatchNorm1d, ReLU
-from torch_geometric.nn import GCNConv, GINConv, GATv2Conv
-import random
-import math
-from sklearn.manifold import TSNE
-import matplotlib.colors
-import time
 from sklearn.model_selection import KFold
 from models import *
 from sys import argv

@@ -1,13 +1,7 @@
 from sys import argv
 import numpy as np
-import pandas as pd
-from sklearn.model_selection import GridSearchCV,KFold
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import get_scorer
+from sklearn.model_selection import KFold
 from prepPytorchData import loc_data_to_tables
-from skopt import BayesSearchCV
-from torch import save as t_save
 import os
 
 seed = 24

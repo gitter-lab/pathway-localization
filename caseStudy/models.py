@@ -1,11 +1,8 @@
 import torch
-from torch_geometric.loader import DataLoader
 import torch.nn.functional as F
 from torch.nn import Linear, Sequential, BatchNorm1d, ReLU
 from torch_geometric.nn import GCNConv, GINConv, GATv2Conv, PANConv, Node2Vec
-import random
 import math
-from sklearn.model_selection import KFold
 
 seed = 2
 torch.manual_seed(seed)
@@ -164,35 +161,3 @@ class GIN2(torch.nn.Module):
         out = self.classifier(e)
 
         return out, e
-
-#class NODE2VEC(torch.nn.Module):
-#    def __init__(self, dataset,mParams):
-#        super(GIN2, self).__init__()
-#        torch.manual_seed(seed)
-#        dim = mParams['dim']
-#        c_depth = mParams['c_depth']
-#
-#        self.nodeEmb = Node2Vec(dataset.edge_index, embedding_dim=dim,
-#                 walk_length=20,                        # lenght of rw
-#                 context_size=10, walks_per_node=200,
-#                 num_negative_samples=1,
-#                 p=200, q=1,                             # bias parameters
-#                 sparse=True)
-#
-#        self.lin1 = Linear(dim, dim/2)
-#        self.lin2 = Linear(dim, dataset.num_classes)
-#
-#    def forward(self, x, edge_index, batch):
-#        h = self.conv1(x, edge_index)
-#        for layer in self.conv_list:
-#            h = layer(h, edge_index)
-#        h = self.lin1(h).relu()
-#        h = F.dropout(h, p=0.5, training=self.training)
-#
-#        #Take the node embeddings and concat nodes for each edge
-#        e = torch.cat((h[edge_index[0]], h[edge_index[1]]), dim=1)
-#
-#        out = self.lin2(e)
-#
-#        return out, e
-
