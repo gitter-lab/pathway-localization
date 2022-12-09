@@ -33,7 +33,7 @@ rule pgm_runs:
     """
     This rule runs probabalistic graphical models and creates predictions for use in analyze_results. 
 
-    The PGM code is tricky to install and uses c++, so it's compilaiton is not currently automatable. 
+    The PGM code is tricky to install and uses c++, so its compilation is not currently automatable. 
     Right now we just assume you have the compiled code in the right places. 
     """
     input:

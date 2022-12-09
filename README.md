@@ -60,7 +60,7 @@ will run the full localization prediction experiment, where `[n]` is the number 
 Any publications using these datasets should cite the original sources of the data.
 
 ## Licenses
-All software (files matching the patterns `Snakefile`,`*.py`, and `*.sh`) is available under a MIT licenese ([`LICENSE-MIT.txt`](LICENSE-MIT.txt)).
+All software (e.g. files matching the patterns `Snakefile`, `CMake*`, `*.py`, `*.h`, `*.cpp`, and `*.sh`) is available under a MIT licenese ([`LICENSE-MIT.txt`](LICENSE-MIT.txt)).
 
 All other files (including data, figures, and the supplementary information) are availble under a CC BY 4.0 license ([`LICENSE-CC-BY.txt`](LICENSE-CC-BY.txt)) except for those derived from PathBank and ComPPI.
 Files derived from PathBank (`data/labeledPathBank.zip`) are available under a [ODbL v1.0 license](https://opendatacommons.org/licenses/odbl/1-0/) in accordance with the PathBank [terms of use](https://www.pathbank.org/about).
