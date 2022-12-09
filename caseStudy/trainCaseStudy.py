@@ -77,8 +77,6 @@ def train(loader, model, optimizer, criterion,device):
     model.train()
     optimizer.zero_grad()  # Clear gradients.
     for data in loader:  # Iterate in batches over the training dataset.
-         if isinstance(data,list): #Black magic
-            data = data[0]
          data.to(device)
          out,e = model(data.x, data.edge_index, data.batch)  # Perform a single forward pass.
          loss = criterion(out[data.is_pred], data.y[data.is_pred])  # Compute the loss only where we have data
