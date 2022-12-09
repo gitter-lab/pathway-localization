@@ -33,7 +33,7 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
         graphData['is_marker'] = graphData.edge_attr[:,1].gt(0)
         graphData['is_pred'] = graphData.edge_attr[:,2].gt(0)
         graphData['name'] = p
-        graphData.num_classes = len(locDict)
+        graphData.num_classes = len(locDict)-1
         dataList.append(graphData)
 
     train_loaders = []
@@ -122,13 +122,12 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
         predDataDict[lineList[0]] = lineList[1]
 
     predDataDictTMT = dict()
-    if 'egf' in pred_data or 'same' in pred_data:
-        pred_dataTMT = 'data/tmtLocs120hpi.csv'
-        for line in open(pred_dataTMT, "r"):
-            lineList=line.strip().split(',')
-            if lineList[1]=='NA':
-                continue
-            predDataDictTMT[lineList[0]] = lineList[1]
+    pred_dataTMT = 'data/tmtLocs120hpi.csv'
+    for line in open(pred_dataTMT, "r"):
+        lineList=line.strip().split(',')
+        if lineList[1]=='NA':
+            continue
+        predDataDictTMT[lineList[0]] = lineList[1]
 
     pathsOrder = []
     for line in open(networks_file, "r"):
