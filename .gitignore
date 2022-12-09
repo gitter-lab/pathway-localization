@@ -1,0 +1,12 @@
+data/labeledPathBank/
+data/labeledReactomeDevNoComplexes/
+data/labeledReactomeNoComplexes/
+databasePrediction/.snakemake/
+databasePrediction/__pycache__/
+databasePrediction/axRuns/
+databasePrediction/data/data-is-unpacked.txt
+databasePrediction/results/allRes.p
+databasePrediction/runs/
+databasePrediction/sk_runs/
+databasePrediction/torchDatasets/
+
