@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-# coding: utf-8
+# coding: utf-8i
+"""
+trainCaseStudy
+Author: Chris Magnano
+
+This file takes in chosen hyperparameter settings for a gnn model and trains it.
+"""
+
 import pandas as pd
 import numpy as np
 from models import *
@@ -9,7 +16,6 @@ from scipy.stats import sem
 from ax.service.ax_client import AxClient
 from sklearn.metrics import balanced_accuracy_score
 import warnings
-
 
 seed = 24
 torch.manual_seed(seed)
@@ -87,8 +93,6 @@ def testTraining(loader, model,device, validationRun, test=False):
      allY = None
      testInd = None
      for data in loader:  # Iterate in batches over the training/test dataset.
-         #if isinstance(data,list): #Black magic
-         #   data = data[0]
          data.to(device)
          out,e = model(data.x, data.edge_index, data.batch)
          pred = out.argmax(dim=1)  # Use the class with highest probability.
@@ -156,9 +160,6 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
     perfDict["Model"] = []
 
     #Load already trained model
-    #checkpoint_filename_parts = parameters['outputFile'].split('-')
-    #checkpoint_filename_parts[1] = parameters['trainedNets']
-    #checkpoint_filename = "-".join(checkpoint_filename_parts)+"_checkpoint"
     checkpoint_filename = parameters['outputFile']+"_checkpoint"
     if not validationRun and os.path.exists(checkpoint_filename):
         checkpoint = torch.load(checkpoint_filename)
@@ -168,7 +169,7 @@ def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
         for i in range(len(train_loaders)):
             models[i].load_state_dict(model_states[i])
             optimizers[i].load_state_dict(optimizer_states[i])
-        start_epoch = 1 #checkpoint['epoch']
+        start_epoch = checkpoint['epoch']
 
     #Start training
     test_acc_batch_list = []
@@ -260,7 +261,6 @@ if __name__ == "__main__":
     best_parameters['outputFile'] = outF
     best_parameters['epochs'] = 300
     best_parameters['validationRun'] = False
-    print(best_parameters)
     testCNNs(best_parameters)
 
 
