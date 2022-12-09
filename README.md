@@ -25,6 +25,7 @@ Supplementary text, figures, and tables can be found in `supplement.pdf`
    ```
    to create a conda environment with the required packages and activate that environment.
    
+   
 ## Recreating plots on archived results
 
 The files in the `databasePrediction` directory can be used to recreate plots from the manuscript.
@@ -39,6 +40,7 @@ Then run:
 ```
 python plotResults.py results/allRes.p
 ```
+This script will interactively display all plots from the database prediction experiment. 
 
 ## Running localization prediction
 
@@ -49,6 +51,20 @@ snakemake --cores [n] all
 ```
 
 will run the full localization prediction experiment, where `[n]` is the number of desired cores.
+
+This workflow ends by running `plotResults.py`, which recreates the database prediction figures from the paper interactively. 
+It does not save any figures automatically. 
+
+The file `results/allRes.p` contains 2 Pandas Dataframes saved using Torch which store results metrics for each pathway and model configuration. 
+`metrics` contains the per-pathway metrics for each run and pathway, while `mergedMetrics` contains metrics calculated by considering all edges at once to perform a single metric calculation per model. 
+They can be loaded into python as:
+
+```
+import torch
+data = torch.load('results/allRes.p')
+metricDF = data['metrics']
+metricMergedDF = data['mergedMetrics']
+```
 
 ## Datasets
 - Reactome data were from version 72 retrieved on June 26, 2020. These files were licensed with the [CC0 license](https://reactome.org/license).
