@@ -12,6 +12,7 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 from torch_geometric.utils.convert import from_networkx
+from torch_geometric.loader import DataLoader
 from models import *
 from sys import argv
 
@@ -35,26 +36,8 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
         graphData.num_classes = len(locDict)
         dataList.append(graphData)
 
-    #Train-Test Split With Mini-Batching
-    nFolds = 5
-    kf = KFold(n_splits = nFolds)
-
     train_loaders = []
     test_loaders = []
-
-    #Used when we skip training and use a pretrained model
-    if all_folds=="all":
-        trains = []
-        tests = []
-        for i in range(len(dataList)):
-            trains.append(dataList[i])
-            tests.append(dataList[i])
-
-        train_loader = DataLoader(trains, batch_size=512, shuffle=False)
-        test_loader = DataLoader(tests, batch_size=512, shuffle=False)
-
-        train_loaders.append(train_loader)
-        test_loaders.append(test_loader)
 
     #Here we hardcoded the dataset indices. This is not great, but it works.
     if 'egf' in pred_data:

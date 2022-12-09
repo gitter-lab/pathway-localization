@@ -24,7 +24,7 @@ rule make_pytorch_val_datasets:
     output:
         val="torchDatasets/{networks}-{features}.p_val"
     shell:
-        "python prepCaseStudyData.py {input.netV} {input.feat} {output.val} data/markerProteins.csv data/allUniprot.tsv folds data/tmtLocs48hpi.csv"
+        "python prepCaseStudyData.py {input.netV} {input.feat} {output.val} data/markerProteins.csv data/allUniprot.tsv folds data/tmtLocs120hpi.csv"
 
 
 #Note: For the case study this rule does not actually run, since we're using the tuning results from the main experiment
