@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
+"""
+prepCaseStudyData.py
+Author: Chris Magnano
+
+This file creates pytorch datasets for the case study workflow.
+Argument descriptions are at the bottom of the file in main.
+"""
+
 import pandas as pd
 import networkx as nx
 import numpy as np
@@ -49,7 +57,8 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
         test_loaders.append(test_loader)
 
     #Here we hardcoded the dataset indices. This is not great, but it works.
-    elif 'egf' in pred_data:
+    if 'egf' in pred_data:
+        # Case where we're training on egf data
         trains = []
         tests = []
         for i in range(453):
@@ -62,6 +71,7 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
         train_loaders.append(train_loader)
         test_loaders.append(test_loader)
     elif 'same' in pred_data:
+        # Case we're training on the 24hpi data from the same paper
         trains = []
         tests = []
         for i in range(492):
@@ -73,32 +83,21 @@ def getCaseStudyData(networks_file, features_file, out_file, markers_file, name_
 
         train_loaders.append(train_loader)
         test_loaders.append(test_loader)
-    elif all_folds=="half":
+    else:
+        # Case we use the database prediction trained model. We directly use a
+        # pretrained model in this case, so we just add everything since no
+        # actual training occurs
         trains = []
         tests = []
-        for i in range(int(len(dataList)/2)):
+        for i in range(len(dataList)):
             trains.append(dataList[i])
-        for i in range(int(len(dataList)/2),len(dataList)):
             tests.append(dataList[i])
+
         train_loader = DataLoader(trains, batch_size=512, shuffle=False)
         test_loader = DataLoader(tests, batch_size=512, shuffle=False)
 
         train_loaders.append(train_loader)
         test_loaders.append(test_loader)
-    elif all_folds=="folds":
-        for tr_ind, te_ind in kf.split(dataList):
-            trains = []
-            tests = []
-            for ind in tr_ind:
-                trains.append(dataList[ind])
-            for ind in te_ind:
-                tests.append(dataList[ind])
-
-            train_loader = DataLoader(trains, batch_size=512, shuffle=False)
-            test_loader = DataLoader(tests, batch_size=512, shuffle=False)
-
-            train_loaders.append(train_loader)
-            test_loaders.append(test_loader)
 
     dataState = dict()
     dataState['train_loaders'] = train_loaders
@@ -156,6 +155,7 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
             allPathDFs[pName] = pathDF
             pathsOrder.append(pName)
 
+    # Add localization labels
     totalE = 0
     misses = 0
     totalPred = 0
@@ -167,12 +167,15 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
         eNameNames = []
         pathDF = allPathDFs[p]
         for index,row in pathDF.iterrows():
+            #Logic for inferring edge localizations from data
             loc = ""
             i1 = row["Interactor1"]
             i2 = row["Interactor2"]
             eName = "_".join(sorted([i1,i2]))
             eNameNames.append(eName)
             eNameInd.append(len(eNameNames)-1)
+
+            #First see if we have marker proteins
             if (i1 in markerDict) and (i2 in markerDict):
                 loc1 = markerDict[i1]
                 loc2 = markerDict[i2]
@@ -192,8 +195,11 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
             if loc != "none":
                 isMarker.append(True)
             else:
-                #Marker no longer does anything since we just use pretrained models for the timeseries data
+                # Marker no longer does anything since we just use
+                # pretrained models for the timeseries data
                 isMarker.append(True)
+
+            #If they are not markers, check the tmt labels
             if (loc=='none'):
                 if 'egf' in p or '24' in p:
                     curPredData = predDataDict
@@ -249,21 +255,31 @@ def pcsf_paths_to_tables(networks_file, features_file, markers_file, name_map_fi
         nx.set_node_attributes(net, featuresDict)
 
     #Make sure we have a canonical ordering for all models
-    if all_folds=='half':
-        pOrder = pathsOrder
-    else:
-        pOrder = list(allPathNets.keys())
-        np.random.shuffle(pOrder)
+    pOrder = list(allPathNets.keys())
+    np.random.shuffle(pOrder)
 
     return allPathNets, allPathDFs, featuresDF, locDict, pOrder
 
 if __name__ == "__main__":
+    # File containing list of pathway files
     networks_file = argv[1]
+
+    # Protein level localization features such as comPPI and Compartments data
     features_file = argv[2]
+
+    # Output file name
     outFile = argv[3]
+
+    # List of marker proteins
     markers_file = argv[4]
+
+    # Protein name map
     name_map_file = argv[5]
+
+    #No longer used, type of train/test split to perform
     all_folds = argv[6]
+
+    # Localization labels
     pred_data = argv[7]
 
     getCaseStudyData(networks_file, features_file, outFile, markers_file, name_map_file, all_folds, pred_data)
