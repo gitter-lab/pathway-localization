@@ -8,6 +8,16 @@ Chris S Magnano, Anthony Gitter.
 
 Supplementary text, figures, and tables can be found in `supplement.pdf`
 
+## Repository Overview
+
+`caseStudy` - Code and data used for the case study predicting subcellular localizations in primary fibroblasts during human cytomeglovirus infection. Instructions for setting up this analysis are in the directory. 
+
+`data` - Pathway data used for all experiments, and scripts originally used to process that data. 
+
+`databasePrediction` - Code and data used for predicting patway database subcellular localizations from protein-level subcellular localization data. Instructions for fully running this analysis via Snakemake are below. 
+
+`exploratoryAnalysis` - Figures from developing localization models and exploring possible pipelines using approx. 100 Reacome pathways in the 'Developmental' category. 
+
 ## Setting up environment
 
 1. Install python/anaconda if needed.

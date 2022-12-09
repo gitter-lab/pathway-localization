@@ -8,5 +8,12 @@ databasePrediction/data/data-is-unpacked.txt
 databasePrediction/results/allRes.p
 databasePrediction/runs/
 databasePrediction/sk_runs/
+databasePrediction/pgm_runs/
 databasePrediction/torchDatasets/
+caseStudy/data/
+caseStudy/runs/
+caseStudy/axRuns/
+caseStudy/.snakemake/
+caseStudy/__pycache__/
+caseStudy/torchDatasets/
 
