@@ -6,7 +6,13 @@ from models import *
 from sys import argv
 from sklearn.metrics import accuracy_score,matthews_corrcoef,f1_score,balanced_accuracy_score
 import warnings
+"""
+combineAnalyzeRes.py
+Author: Chris Magnano
 
+Combines results from all types of models, calculates metrics, and 
+saves output as a pickled dictionary for plotting. 
+"""
 seed = 24
 torch.manual_seed(seed)
 np.random.seed(seed)
@@ -192,13 +198,14 @@ def evalSKModel(inFile):
     return metrics, mergedMetrics
 
 def getOuts(loader, model):
-     model.eval()
-     correct = 0
-     total = 0
-     predList = []
-     yList = []
-     missingList = []
-     for data in loader:
+    """
+    Actually perform predictions for pytorch models. 
+    """
+    model.eval()
+    predList = []
+    yList = []
+    missingList = []
+    for data in loader:
          out,e = model(data.x, data.edge_index, data.batch)
          pred = out.argmax(dim=1)  # Use the class with highest probability.
 
@@ -223,7 +230,7 @@ def getOuts(loader, model):
             missVec = (oneMissing.type(torch.int) + allMissing.type(torch.int)).numpy()
             missingList.append(missVec)
 
-     return predList,yList,missingList
+    return predList,yList,missingList
 
 def getMetricLists(predList,yList,missingList=None):
     mccList = []
@@ -240,6 +247,8 @@ def getMetricLists(predList,yList,missingList=None):
     totalSize = None
     totalPredCount = None
     totalLocCount = None
+    #We have a lot of warning and error catching below, because some networks end up being 
+    #degenerate cases with single classes and other situations where some metrics break. 
     for i in range(len(predList)):
         try:
             pred = predList[i].numpy()
@@ -292,22 +301,10 @@ def getMetricLists(predList,yList,missingList=None):
               'Predicted Unique Localizations':[totalPredCount]}
     return netOut, allOut
 
-
-def getEmbedding(loader, model):
-    model.eval()
-    embeddingAll = None
-    yAll = None
-    for data in loader:  # Iterate in batches over the training/test dataset.
-         out,e = model(data.x, data.edge_index, data.batch)
-         if (embeddingAll == None):
-            embeddingAll = e
-            yAll = data.y
-         else:
-            embeddingAll = torch.cat((embeddingAll,e), dim=0)
-            yAll = torch.cat((yAll,data.y), dim=0)
-    return embeddingAll, yAll
-
 def evalModels(models, train_loaders, test_loaders, mName, parameters, resultsData, lr):
+    """
+    Get predictions for pytorch models and merge batches for evaluation. 
+    """
     losses = resultsData['losses']
     for i in range(len(train_loaders)):
         model_states = resultsData['model_states']

@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
+"""
+localizationTuningAx.py
+Author: Chris Magnano
+
+This file performs hyperparameter selection/model tuning using Bayesian optimization, 
+saving the best parameter setting for use in the full training run. 
+"""
 from localizationPyTorchGeo import *
 
 seed = 24
@@ -21,6 +28,7 @@ if __name__ == "__main__":
     #This is where the NN parameters are all defined
     parameters=[
         {"name": "lRate", "type": "range", "bounds": [1e-5, 0.01], "log_scale": True},
+        #l_depth is the number of fully-connected layers
         {"name": "l_depth", "type": "range", "value_type": "int", "bounds": [1, 5]},
         {"name": "dropout", "type": "choice", "value_type": "float", "values": [0.0, 0.5]},
         {"name": "epochs", "type": "fixed", "value_type": "int", "value": 1000},
@@ -51,27 +59,26 @@ if __name__ == "__main__":
         objective_name="accuracy",
         minimize=False)
 
-    startI = 0
-    pastParams1 = {}
+    startI = 0 #Iteration to start at for checkpointing
+    pastParams1 = {} #Previous iteration's parameters
+
+    #Search backwards from 30 to find the latest checkpoint
     for i in range(29,-1,-1):
         curPath = outF+"_iter"+str(i)
         if os.path.exists(curPath):
             startI = i+1
             ax_client = AxClient.load_from_json_file(curPath)
             break
+    #Main Bayesian optimization loop
     for i in range(startI,30):
         parameters, trial_index = ax_client.get_next_trial()
         #We stalled out, no need to continue
         if pastParams1 == parameters:
             print("Stopping Ax Early Because Trials Started Repeating")
             break
-        # Local evaluation here can be replaced with deployment to external system.
         ax_client.complete_trial(trial_index=trial_index, raw_data=testCNNs(parameters))
         pastParams1 = parameters
         ax_client.save_to_json_file(filepath=outF+"_iter"+str(i))
     best_parameters, values = ax_client.get_best_parameters()
     ax_client.save_to_json_file(filepath=outF)
     print(best_parameters)
-
-
-

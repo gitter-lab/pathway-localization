@@ -8,7 +8,12 @@ from torch_geometric.loader import DataLoader
 from sklearn.model_selection import KFold
 from models import *
 from sys import argv
+"""
+Author: Chris Magnano
 
+This file creates pytorch datasets for the database prediction experiment.
+These graph datasets are used by pytorch and pytorch geometric models. 
+"""
 seed = 24
 torch.manual_seed(seed)
 np.random.seed(seed) #TODO numpy now reccomends using generators to create random states

@@ -3,7 +3,13 @@ import numpy as np
 from sklearn.model_selection import KFold
 from prepPytorchData import loc_data_to_tables
 import os
+"""
+prepPGMData.py
+Author: Chris Magnano
 
+This file takes pathway and localization data to create training and test splits 
+for use by DGM probabilistic graphical models (runPGM.sh).
+"""
 seed = 24
 np.random.seed(seed)
 

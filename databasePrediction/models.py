@@ -1,3 +1,12 @@
+"""
+Models.py
+Author: Chris Magnano
+
+Various Pytorch and Pytorch Geometric neural network models used 
+for localization prediction. Most of these models were based on 
+Google Colab examples found at: 
+https://pytorch-geometric.readthedocs.io/en/latest/notes/colabs.html
+"""
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, Sequential, BatchNorm1d, ReLU
@@ -8,6 +17,9 @@ seed = 2
 torch.manual_seed(seed)
 
 class LinearNN(torch.nn.Module):
+    """
+    A fully-connected neural network with [dim] neurons in each of its layers. 
+    """
     def __init__(self, dataset, mParams):
         super(LinearNN, self).__init__()
         torch.manual_seed(seed)
@@ -45,6 +57,10 @@ class LinearNN(torch.nn.Module):
         return out, h
 
 class SimpleGCN(torch.nn.Module):
+    """
+    A simply graph convolutional network. This network has [c_depth] 
+    convolutional layers followed by [l_depth] fully connected layers. 
+    """
     def __init__(self, dataset, mParams):
         super(SimpleGCN, self).__init__()
         torch.manual_seed(seed)
@@ -83,9 +99,10 @@ class SimpleGCN(torch.nn.Module):
 
 class GATCONV(torch.nn.Module):
     """
-    A graph attention network with 4 graph layers and 3 linear layers.
+    A graph attention network with [c_depth] graph layers and [l_depth] linear layers.
     Uses v2 of graph attention that provides dynamic instead of static attention.
-    The graph layer dimension and number of attention heads can be specified.
+    The graph layer dimension and number of attention heads are specified by [dim] 
+    and [num_heads].
     """
     def __init__(self, dataset, mParams):
         super(GATCONV, self).__init__()
@@ -125,9 +142,11 @@ class GATCONV(torch.nn.Module):
 
         return out, e
 
-# See https://github.com/pyg-team/pytorch_geometric/blob/master/examples/mutag_gin.py
-##### Use this version with cross entropy loss instead of the GIN class above
 class GIN2(torch.nn.Module):
+    """
+    A graph isomorphism network with [c_depth] convolutional layers and [l_depth] fully
+    connected layers.  
+    """
     def __init__(self, dataset,mParams):
         super(GIN2, self).__init__()
         torch.manual_seed(seed)

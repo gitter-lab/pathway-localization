@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
+"""
+This file creates all figures associated with the database prediction experiment. 
+"""
 from sys import argv
 import matplotlib.pyplot as plt
 import seaborn as sns

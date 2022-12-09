@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
+"""
+localizationPyTorchGeo.py
+Author: Chris Magnano
+
+This file takes in chosen hyperparameter settings for a neural network model and trains it.
+"""
 import pandas as pd
 import numpy as np
 from models import *
@@ -98,20 +104,6 @@ def testTraining(loader, model,device):
          warnings.simplefilter('ignore', category=UserWarning)
          bal_acc = balanced_accuracy_score(allY, allPred)
      return bal_acc  # Derive ratio of correct predictions.
-
-def getEmbedding(loader, model):
-    model.eval()
-    embeddingAll = None
-    yAll = None
-    for data in loader:  # Iterate in batches over the training/test dataset.
-         out,e = model(data.x, data.edge_index, data.batch)
-         if (embeddingAll == None):
-            embeddingAll = e
-            yAll = data.y
-         else:
-            embeddingAll = torch.cat((embeddingAll,e), dim=0)
-            yAll = torch.cat((yAll,data.y), dim=0)
-    return embeddingAll, yAll
 
 def evalModelCV(models, train_loaders, test_loaders,device, mName, parameters,
                 epochs=1000, lr=0.001, validationRun=False):
