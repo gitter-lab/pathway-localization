@@ -3,14 +3,11 @@
 import pandas as pd
 import networkx as nx
 import numpy as np
-import torch
 from torch_geometric.utils.convert import from_networkx
 from torch_geometric.loader import DataLoader
 from sklearn.model_selection import KFold
 from models import *
 from sys import argv
-import pickle as pkl
-import os.path
 
 seed = 24
 torch.manual_seed(seed)

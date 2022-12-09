@@ -1,7 +1,16 @@
+# Neural network models to run
 MODELS=['LinearNN', 'SimpleGCN', 'GATCONV', 'GIN2']
+
+# Scikit-learn models to run
 SKLEARN_MODELS=['logit','rf']
+
+# Which pathway datasets to use
 NETWORKS=['allReactomePaths','allPathBank']
+
+# Feature sets which can be used by NaivePGM
 NAIVE_FEATURES=['comPPINodes','compartmentsNodes']
+
+# All protein-level feature sets
 FEATURES=['comPPINodes','compartmentsNodes','mergedKeyWords_5']
 
 #If pgm models have not been compiled, we can't run them
@@ -11,16 +20,22 @@ if (isfile('pgm/train_nets') and isfile('pgm/no_training_model')):
 else:
     PGM_MODELS=[]
 
-#This rule makes sure that all the data has been unzipped before running other steps.
 rule unpack_data:
+    """
+    This rule makes sure that all the data has been unzipped before running other steps.
+    """
     output:
         unpackedProof = "data/data-is-unpacked.txt"
     shell:
         "bash unpackData.sh {output.unpackedProof}"
 
-#The PGM code is tricky to install and uses c++, so it's not currently automatable. 
-#Right now we just assume you have the compiled code in the right places. 
 rule pgm_runs:
+    """
+    This rule runs probabalistic graphical models and creates predictions for use in analyze_results. 
+
+    The PGM code is tricky to install and uses c++, so it's compilaiton is not currently automatable. 
+    Right now we just assume you have the compiled code in the right places. 
+    """
     input:
         unpacked = "data/data-is-unpacked.txt",
         net = "data/{networks}.txt",
@@ -33,11 +48,15 @@ rule pgm_runs:
     shell:
         "bash runPGM.sh {input.net} {input.feat} {params.curModel} {output.full} {params.outputDir};"
 
-#The entire sklearn workflow takes <5 minutes to run, 
-#so it feels like wasted effort to break this into multiple rules 
-#
-# Note: _val stands for validation and are generally random 10% subsets of the total dataset. 
 rule sklearn_runs:
+    """
+    This rule performs data preperation, hyperparameter tuning, and training for scikit-learn models.  
+    Note that _val stands for validation, and are random 10% subsets of the dataset used for
+    hyperparameter selection. 
+
+    The entire sklearn workflow takes <5 minutes to run, so it feels like wasted effort to break this 
+    into multiple rules.
+    """
     input:
         unpacked = "data/data-is-unpacked.txt",
         net = "data/{networks}.txt",
@@ -50,8 +69,12 @@ rule sklearn_runs:
     shell:
         "python sckitModels.py {input.net} {input.netV} {input.feat} {params.curModel} {output};"
 
-#Take in network files, features, and ground-truth labels to create pytorch data objects. 
 rule make_pytorch_datasets:
+    """
+    This rule takes in network files, features, and ground-truth labels to make pytorch geometric
+    data objects. Note that _val stands for validation, and are random 10% subsets of the dataset
+    used for hyperparameter selection. 
+    """
     input:
         unpacked = "data/data-is-unpacked.txt",
         net = "data/{networks}.txt",
@@ -64,8 +87,11 @@ rule make_pytorch_datasets:
         "python prepPytorchData.py {input.net} {input.feat} {output.full};"
         "python prepPytorchData.py {input.netV} {input.feat} {output.val}"
 
-#Perform parameter tuning using bayesian optimization
 rule tune_pytorch_params:
+    """
+    This rule performs hyperparameter tuning using bayesian optimization.
+    Candidate ranges for each models' parameters can be found in localizationTuningAx.py
+    """
     input:
         "torchDatasets/{networks}-{features}.p_val"
     params:
@@ -75,8 +101,10 @@ rule tune_pytorch_params:
     shell:
         "python localizationTuningAx.py {params.curModel} {input} {output}"
 
-#Perform pytorch run using best-performing parameters
 rule pytorch_run:
+    """
+    Performs model training with pytorch using best-performing parameters from the tuning step.
+    """
     input:
         "axRuns/{model}-{networks}-{features}.json",
         "torchDatasets/{networks}-{features}.p"
@@ -85,11 +113,17 @@ rule pytorch_run:
     shell:
         "python localizationPyTorchGeo.py {input} {output}"
 
-#Combine results from different sources to produce a dictionary of metrics. 
 rule analyze_results:
+    """
+    This rule combines all results from different model types, calculates performance metrics,
+    and stores them in a pickled dictionary. 
+    """
     input:
         expand("runs/{model}-{networks}-{features}.p", model=MODELS,networks=NETWORKS,features=FEATURES),
         expand("sk_runs/sk_{sk_model}-{networks}-{features}.p", sk_model=SKLEARN_MODELS,networks=NETWORKS,features=FEATURES),
+
+        #We currently comment out these 2 lines for the graphical models, since otherwise the rules still run. These lines
+        #would need to be uncommented to reintegrate the graphical models. 
         #expand("pgm_runs/pgm_TrainedPGM-{networks}-{features}.p", pgm_model=PGM_MODELS,networks=NETWORKS,features=FEATURES),
         #expand("pgm_runs/pgm_NaivePGM-{networks}-{features}.p", pgm_model=PGM_MODELS,networks=NETWORKS,features=NAIVE_FEATURES)
     output:
@@ -97,8 +131,10 @@ rule analyze_results:
     shell:
         "python combineAnalyzeRes.py {input}"
 
-#Finally, create plots. 
 rule all:
+    """
+    Takes in all results and creates plots. 
+    """
     input:
         res = "results/allRes.p"
     shell:
