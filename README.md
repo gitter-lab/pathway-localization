@@ -8,26 +8,23 @@ Chris S Magnano, Anthony Gitter.
 
 Supplementary text, figures, and tables can be found in `supplement.pdf`
 
-## Repository Overview
+## Repository overview
 
-`caseStudy` - Code and data used for the case study predicting subcellular localizations in primary fibroblasts during human cytomeglovirus infection. Instructions for setting up this analysis are in the directory. 
+- `caseStudy` - Code and data used for the case study predicting subcellular localizations in primary fibroblasts during human cytomeglovirus infection. Instructions for running this analysis are in the subdirectory. 
+- `data` - Pathway data used for all experiments and scripts originally used to process that data. 
+- `databasePrediction` - Code and data used for predicting pathway database subcellular localizations from protein-level subcellular localization data. Instructions for running this analysis via Snakemake are below. 
+- `exploratoryAnalyses` - Preliminary figures from developing localization models and exploring possible pipelines using approximately 100 Reactome pathways in the 'Developmental' category. 
 
-`data` - Pathway data used for all experiments, and scripts originally used to process that data. 
+## Setting up the environment
 
-`databasePrediction` - Code and data used for predicting patway database subcellular localizations from protein-level subcellular localization data. Instructions for fully running this analysis via Snakemake are below. 
-
-`exploratoryAnalysis` - Figures from developing localization models and exploring possible pipelines using approx. 100 Reacome pathways in the 'Developmental' category. 
-
-## Setting up environment
-
-1. Install python/anaconda if needed.
+1. Install Anaconda if needed.
 
    The easiest way to install Python and the required packages is with [Anaconda](https://www.anaconda.com/download/).
    The Carpentries [Anaconda installation instructions](https://carpentries.github.io/workshop-template/#python) provide guides and videos on how to install Anaconda for your operating system.
 
 2. Create the conda environment.
 
-   From the `pathway-localization` directory, run
+   From the `pathway-localization` directory, run:
 
    ```
    conda env create -f environment.yml
@@ -65,9 +62,9 @@ will run the full localization prediction experiment, where `[n]` is the number 
 This workflow ends by running `plotResults.py`, which recreates the database prediction figures from the paper interactively. 
 It does not save any figures automatically. 
 
-The file `results/allRes.p` contains 2 Pandas Dataframes saved using Torch which store results metrics for each pathway and model configuration. 
+The file `results/allRes.p` contains 2 Pandas DataFrames saved using PyTorch, which store results metrics for each pathway and model configuration. 
 `metrics` contains the per-pathway metrics for each run and pathway, while `mergedMetrics` contains metrics calculated by considering all edges at once to perform a single metric calculation per model. 
-They can be loaded into python as:
+They can be loaded into Python as:
 
 ```
 import torch
@@ -86,8 +83,8 @@ metricMergedDF = data['mergedMetrics']
 Any publications using these datasets should cite the original sources of the data.
 
 ## Licenses
-All software (e.g. files matching the patterns `Snakefile`, `CMake*`, `*.py`, `*.h`, `*.cpp`, and `*.sh`) is available under a MIT licenese ([`LICENSE-MIT.txt`](LICENSE-MIT.txt)).
+All software (e.g. files matching the patterns `Snakefile`, `CMake*`, `*.py`, `*.h`, `*.cpp`, and `*.sh`) is available under a MIT license ([`LICENSE-MIT.txt`](LICENSE-MIT.txt)).
 
-All other files (including data, figures, and the supplementary information) are availble under a CC BY 4.0 license ([`LICENSE-CC-BY.txt`](LICENSE-CC-BY.txt)) except for those derived from PathBank and ComPPI.
+All other files (including data, figures, and the supplementary information) are available under a CC BY 4.0 license ([`LICENSE-CC-BY.txt`](LICENSE-CC-BY.txt)) except for those derived from PathBank and ComPPI.
 Files derived from PathBank (`data/labeledPathBank.zip`) are available under a [ODbL v1.0 license](https://opendatacommons.org/licenses/odbl/1-0/) in accordance with the PathBank [terms of use](https://www.pathbank.org/about).
 Files derived from ComPPI (`databasePrediction/data/comPPINodes.tsv`) are available under a [CC BY-SA 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/) in accordance with the ComPPI [terms of use](https://comppi.linkgroup.hu/help/terms_of_use).

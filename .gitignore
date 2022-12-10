@@ -1,3 +1,4 @@
+.idea/
 data/labeledPathBank/
 data/labeledReactomeDevNoComplexes/
 data/labeledReactomeNoComplexes/
@@ -16,4 +17,3 @@ caseStudy/axRuns/
 caseStudy/.snakemake/
 caseStudy/__pycache__/
 caseStudy/torchDatasets/
-
