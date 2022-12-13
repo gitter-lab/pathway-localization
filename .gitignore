@@ -12,6 +12,7 @@ databasePrediction/sk_runs/
 databasePrediction/pgm_runs/
 databasePrediction/torchDatasets/
 caseStudy/data/
+caseStudy/results/
 caseStudy/runs/
 caseStudy/axRuns/
 caseStudy/.snakemake/
