@@ -1,6 +1,6 @@
 # Case study
 
-This directory contains all data and code used for the case study on data from primary fibroblasts during human cytomeglovirus infection. 
+This directory contains all data and code used for the case study on data from primary fibroblasts during human cytomegalovirus infection. 
 
 Three different experimental scenarios were explored.
 For all scenarios, the model and parameters used were from one of the best performing models in the database prediction experiment. 
