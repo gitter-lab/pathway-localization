@@ -5,11 +5,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.decomposition import PCA
 
 """
-This script takes in a tsv of all uniprot keywords, and constructs features based on the top X keywords. We might try clustering or PCA in the future.
-
-NOW WE DOIN PCA
-
-Ya know, is there a form of feature clustering to maximize variance AND minimize missing data?
+This script takes in a tsv of all uniprot keywords, and constructs features based on the top X keywords.
 """
 
 def main():
@@ -28,7 +24,7 @@ def main():
     df["Keywords"] = df["Keywords"].str.split(";")
     df["Entry name"] = df["Entry name"].str.replace("_HUMAN","")
     df = df.set_index("Entry name")
-    #print(df)
+
     #This converts the list column into binary columns
     s = df['Keywords']
 
@@ -37,7 +33,6 @@ def main():
     binDF = binDF.drop(columns=["Reference proteome","Alternative splicing", "3D-structure","Direct protein sequencing"])
     s = binDF.sum().sort_values(ascending=False, inplace=False)
     binDF = binDF[binDF.columns[binDF.sum()>(len(binDF)*(thresh*0.01))]]
-    #print(s[:20])
 
     pca = PCA(n_components=6, svd_solver="full")
     pca.fit(binDF)
